@@ -55,6 +55,7 @@ export interface FeaturedProductContent {
   description: string;
   href: string;
   badge?: string;
+  badgeColor?: string;
   price: number | null;
   discountPrice: number | null;
   category: PublicCatalogCategoryReference | null;

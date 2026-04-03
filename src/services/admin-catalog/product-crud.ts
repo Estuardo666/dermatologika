@@ -1,6 +1,7 @@
 import "server-only";
 
 import { adminProductFormSchema } from "@/features/admin-catalog/schemas/admin-catalog.schema";
+import { normalizeBadgeColor } from "@/lib/product-badges";
 import { resolveProductIdentity } from "@/lib/catalog-slugs";
 import {
   findAdminProductRecord,
@@ -19,6 +20,14 @@ function normalizeMediaAssetId(mediaAssetId: string): string | null {
 function normalizeOptionalString(value: string): string | null {
   const normalizedValue = value.trim();
   return normalizedValue.length > 0 ? normalizedValue : null;
+}
+
+function normalizeOptionalBadgeColor(input: { badge: string; badgeColor: string }): string | null {
+  if (input.badge.trim().length === 0) {
+    return null;
+  }
+
+  return normalizeBadgeColor(input.badgeColor);
 }
 
 async function assertMediaAssetExists(mediaAssetId: string | null): Promise<void> {
@@ -102,6 +111,7 @@ export async function createProduct(input: AdminProductFormData) {
       description: parsedInput.description,
       href: identity.href,
       badge: normalizeOptionalString(parsedInput.badge),
+      badgeColor: normalizeOptionalBadgeColor(parsedInput),
       price: parsedInput.price,
       discountPrice: parsedInput.discountPrice,
       stock: parsedInput.stock,
@@ -140,6 +150,7 @@ export async function updateProduct(id: string, input: AdminProductFormData) {
       description: parsedInput.description,
       href: identity.href,
       badge: normalizeOptionalString(parsedInput.badge),
+      badgeColor: normalizeOptionalBadgeColor(parsedInput),
       price: parsedInput.price,
       discountPrice: parsedInput.discountPrice,
       stock: parsedInput.stock,

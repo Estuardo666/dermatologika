@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 
 import { AdminBreadcrumbs } from "@/components/layout/admin-breadcrumbs";
 import { MediaAssetFrame } from "@/components/media/media-asset-frame";
+import { ProductBadge } from "@/components/ui/product-badge";
 import { cx } from "@/lib/utils";
+import { DEFAULT_PRODUCT_BADGE_COLOR, PRODUCT_BADGE_PRESETS } from "@/lib/product-badges";
 import {
 	buildCatalogMediaStorageKey,
 	buildProductHref,
@@ -46,6 +48,7 @@ function buildProductForm(
 			description: "",
 			href: "",
 			badge: "",
+			badgeColor: "",
 			isActive: true,
 			categoryId: defaultCategory?.id ?? "",
 			mediaAssetId: "",
@@ -58,6 +61,7 @@ function buildProductForm(
 		description: product.description,
 		href: product.href,
 		badge: product.badge ?? "",
+		badgeColor: product.badgeColor ?? (product.badge ? DEFAULT_PRODUCT_BADGE_COLOR : ""),
 		isActive: product.isActive,
 		categoryId: product.categoryId ?? "",
 		mediaAssetId: product.mediaAssetId ?? "",
@@ -143,6 +147,18 @@ const adminReadonlyFieldClassName = "w-full rounded-lg border border-[#c0d4be] b
 
 export function ProductAdminForm({ initialData, mode, product }: ProductAdminFormProps) {
 	const router = useRouter();
+	const badgePresetOptions =
+		initialData.badgePresets.filter((preset) => preset.isActive).length > 0
+			? initialData.badgePresets.filter((preset) => preset.isActive)
+			: PRODUCT_BADGE_PRESETS.map((preset, index) => ({
+				id: `fallback-${preset.label}`,
+				label: preset.label,
+				color: preset.color,
+				isActive: true,
+				sortOrder: index,
+				createdAt: "",
+				updatedAt: "",
+			}));
 	const [formData, setFormData] = useState<AdminProductFormData>(() =>
 		buildProductForm(product, initialData.categories),
 	);
@@ -221,6 +237,24 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 			name,
 			slug,
 			href: slug ? buildProductHref(slug) : "",
+		}));
+	}
+
+	function applyBadgePreset(label: string, color: string) {
+		markAsDirty();
+		setFormData((current) => ({
+			...current,
+			badge: label,
+			badgeColor: color,
+		}));
+	}
+
+	function clearBadge() {
+		markAsDirty();
+		setFormData((current) => ({
+			...current,
+			badge: "",
+			badgeColor: "",
 		}));
 	}
 
@@ -403,10 +437,52 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 								</select>
 							</label>
 
-							<label className="space-y-2">
-								<span className="block text-label-md text-text-primary">Badge</span>
-								<input value={formData.badge} onChange={(event) => updateField("badge", event.target.value)} className={adminFieldClassName} placeholder="Nuevo" />
-							</label>
+							<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+								<div className="flex items-center justify-between gap-3">
+									<span className="block text-label-md text-text-primary">Badge</span>
+									{formData.badge ? (
+										<button type="button" onClick={clearBadge} className="text-body-sm text-text-secondary underline-offset-4 hover:underline">
+											Quitar
+										</button>
+									) : null}
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{badgePresetOptions.map((preset) => (
+										<button
+											key={preset.id}
+											type="button"
+											onClick={() => applyBadgePreset(preset.label, preset.color)}
+											className="rounded-full border border-border-soft px-3 py-1.5 text-body-sm text-text-primary transition hover:border-border-brand hover:bg-surface-canvas"
+										>
+											{preset.label}
+										</button>
+									))}
+								</div>
+								<div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_132px]">
+									<label className="space-y-2">
+										<span className="block text-caption uppercase tracking-[0.12em] text-text-muted">Texto</span>
+										<input value={formData.badge} onChange={(event) => updateField("badge", event.target.value)} className={adminFieldClassName} placeholder="Escribe tu badge" />
+									</label>
+									<label className="space-y-2">
+										<span className="block text-caption uppercase tracking-[0.12em] text-text-muted">Color</span>
+										<input
+											type="color"
+											value={formData.badgeColor || DEFAULT_PRODUCT_BADGE_COLOR}
+											onChange={(event) => updateField("badgeColor", event.target.value.toUpperCase())}
+											className="h-[52px] w-full cursor-pointer rounded-xl border border-[#c0d4be] bg-[#f8fbf7] p-2"
+											disabled={!formData.badge}
+										/>
+									</label>
+								</div>
+								{formData.badge ? (
+									<div className="flex items-center gap-3">
+										<span className="text-body-sm text-text-secondary">Vista previa</span>
+										<ProductBadge label={formData.badge} color={formData.badgeColor || DEFAULT_PRODUCT_BADGE_COLOR} className="rounded-full border px-3 py-1" />
+									</div>
+								) : (
+									<p className="text-body-sm text-text-secondary">Selecciona un preset o escribe un badge propio y asígnale color.</p>
+								)}
+							</div>
 
 							<label className="flex items-center gap-3 rounded-2xl border border-border-soft bg-surface-subtle px-4 py-3 text-body-sm text-text-secondary md:self-end">
 								<input type="checkbox" checked={formData.isActive} onChange={(event) => updateField("isActive", event.target.checked)} className="h-4 w-4 rounded border-border-default" />
@@ -452,6 +528,12 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 							<p><span className="text-text-primary">Categoria:</span> {initialData.categories.find((category) => category.id === formData.categoryId)?.name || "Sin categoria"}</p>
 							<p><span className="text-text-primary">Estado:</span> {formData.isActive ? "Activo" : "Inactivo"}</p>
 							<p><span className="text-text-primary">Badge:</span> {formData.badge || "Sin badge"}</p>
+							{formData.badge ? (
+								<div className="flex items-center gap-2">
+									<span className="text-text-primary">Preview:</span>
+									<ProductBadge label={formData.badge} color={formData.badgeColor || DEFAULT_PRODUCT_BADGE_COLOR} className="rounded-full border px-3 py-1" />
+								</div>
+							) : null}
 						</div>
 
 						<div className="mt-5 space-y-2 border-t border-border-soft pt-5">

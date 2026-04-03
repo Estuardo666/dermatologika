@@ -36,6 +36,11 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
   - Includes breadcrumbs and visual save-state feedback inside the record.
   - Requires admin session.
 
+- `GET /admin/catalog/badges`
+  - Protected admin page for managing reusable global product badge presets.
+  - Supports create, edit, activate/deactivate, ordering, color preview, and delete.
+  - Requires admin session.
+
 ## API Routes
 
 - `GET /api/admin/catalog`
@@ -86,6 +91,7 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
     "slug": "",
     "href": "",
     "badge": "Nuevo",
+    "badgeColor": "#1F8F6B",
     "isActive": true,
     "categoryId": "cmnfjfhns000avpnwtlqdlar3",
     "mediaAssetId": ""
@@ -108,6 +114,29 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
   - Rejects deletes when any selected product is still featured on Home.
   - Requires admin session.
 
+- `POST /api/admin/catalog/badges`
+  - Creates a global badge preset.
+  - Requires admin session.
+
+  Body:
+  ```json
+  {
+    "label": "Nuevo",
+    "color": "#1F8F6B",
+    "isActive": true,
+    "sortOrder": 0
+  }
+  ```
+
+- `PUT /api/admin/catalog/badges/:id`
+  - Updates an existing global badge preset.
+  - Returns `409 CONFLICT` when the label would collide with another preset.
+  - Requires admin session.
+
+- `DELETE /api/admin/catalog/badges/:id`
+  - Deletes a global badge preset.
+  - Requires admin session.
+
 ## Validation Rules
 
 - `slug`
@@ -121,6 +150,18 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
   - Must reference an existing `MediaAsset` when provided.
 - `badge`
   - Optional for products.
+- `badgeColor`
+  - Optional for products.
+  - Must be a valid hex color when provided.
+- `label`
+  - Required for badge presets.
+  - Must be unique across presets.
+- `color`
+  - Required for badge presets.
+  - Must be a valid hex color.
+- `sortOrder`
+  - Required for badge presets.
+  - Must be an integer greater than or equal to `0`.
 - `categoryId`
   - Required for products.
   - Must reference an existing `Category`.
@@ -154,6 +195,9 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
 - Product sync metadata remains visible in the admin list and is preserved for future provider integration.
 - The admin panel uploads category and product images first through the existing protected media upload route and then persists the resulting `mediaAssetId` on the catalog entity.
 - The catalog forms now render a local image preview before upload, using the same media frame pattern as the Home editor.
+- Product forms now include badge presets (`Nuevo`, `Oferta`, `Destacado`) plus custom badge text and a color picker.
+- Badge presets are now manageable globally from their own admin screen and feed the product editor as reusable quick options.
+- Public product cards now render the badge in the top-right corner as a fully opaque color pill without blur.
 - Category and product libraries now render in a column-based operational table closer to WooCommerce or Shopify, with persisted search and status filters in the URL.
 - Category and product libraries now support server-driven column sorting plus row selection with bulk activate, deactivate, and delete actions.
 - Pagination is server-driven for both category and product libraries instead of slicing full datasets on the client.

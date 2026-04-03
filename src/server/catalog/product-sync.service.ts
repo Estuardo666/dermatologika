@@ -346,6 +346,7 @@ export class ProductSyncService {
       slug: externalProduct.slug,
       href: `/product/${externalProduct.slug}`, // Or derive from existing
       badge: externalProduct.badge || existingLocal?.badge,
+      badgeColor: existingLocal?.badgeColor ?? null,
       isActive: true,
       externalId: externalProduct.externalId,
       externalSourceId: config.sourceSystemId,

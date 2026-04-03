@@ -30,6 +30,7 @@ export async function findHomePageContentRecord() {
         include: {
           product: {
             include: {
+              category: true,
               mediaAsset: true,
             },
           },

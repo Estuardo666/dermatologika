@@ -30,6 +30,7 @@ const featuredProductItemSchema = z.object({
   description: z.string().min(1),
   href: z.string().min(1),
   badge: z.string().min(1).optional(),
+  badgeColor: z.string().regex(/^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/).optional(),
   price: z.coerce.number().nonnegative().nullable().optional(),
   discountPrice: z.coerce.number().nonnegative().nullable().optional(),
   category: z
@@ -83,6 +84,7 @@ const storedProductSelectionSchema = z.object({
     description: z.string().min(1),
     href: z.string().min(1),
     badge: z.string().nullable().optional(),
+    badgeColor: z.string().nullable().optional(),
     price: z.coerce.number().nonnegative(),
     discountPrice: z.coerce.number().nonnegative().nullable().optional(),
     category: z
@@ -198,7 +200,13 @@ function parseFeaturedProductsItems(value: unknown): FeaturedProductContent[] {
       media: null,
     };
 
-    return item.badge ? { ...baseItem, badge: item.badge } : baseItem;
+    return item.badge
+      ? {
+          ...baseItem,
+          badge: item.badge,
+          ...(item.badgeColor ? { badgeColor: item.badgeColor } : {}),
+        }
+      : baseItem;
   });
 }
 
@@ -222,7 +230,13 @@ function parseFeaturedProductSelections(value: unknown): FeaturedProductContent[
       media: mapStoredMediaAsset(selection.product.mediaAsset ?? null),
     };
 
-    return selection.product.badge ? { ...baseItem, badge: selection.product.badge } : baseItem;
+    return selection.product.badge
+      ? {
+          ...baseItem,
+          badge: selection.product.badge,
+          ...(selection.product.badgeColor ? { badgeColor: selection.product.badgeColor } : {}),
+        }
+      : baseItem;
   });
 }
 

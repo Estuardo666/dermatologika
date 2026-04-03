@@ -58,6 +58,7 @@ const productSeedData = [
     description: "Selección destacada con prioridad comercial y estructura lista para merchandising real.",
     href: "#contact-cta",
     badge: "Destacado",
+    badgeColor: "#B7791F",
     price: 34.9,
     discountPrice: 29.9,
     stock: 32,
@@ -68,6 +69,7 @@ const productSeedData = [
     description: "Producto preparado para ficha breve, badge comercial y media administrable.",
     href: "#contact-cta",
     badge: "Más consultado",
+    badgeColor: "#2F6FDE",
     price: 26.5,
     discountPrice: 22.5,
     stock: 28,
@@ -78,6 +80,7 @@ const productSeedData = [
     description: "Entrada de catálogo pensada para campañas de cuidado nocturno o renovación.",
     href: "#contact-cta",
     badge: null,
+    badgeColor: null,
     price: 41.0,
     discountPrice: null,
     stock: 21,
@@ -88,6 +91,7 @@ const productSeedData = [
     description: "Apoyo para continuidad de rutina y recuperación visible.",
     href: "#contact-cta",
     badge: "Rutina guiada",
+    badgeColor: "#1F8F6B",
     price: 37.0,
     discountPrice: null,
     stock: 25,
@@ -98,6 +102,7 @@ const productSeedData = [
     description: "Selección de soporte diario lista para reposición o recomendación recurrente.",
     href: "#contact-cta",
     badge: "Reposición",
+    badgeColor: "#8A5CF6",
     price: 31.5,
     discountPrice: null,
     stock: 30,
@@ -108,6 +113,7 @@ const productSeedData = [
     description: "Producto de continuidad preparado para el segundo shelf editorial.",
     href: "#contact-cta",
     badge: "Noche",
+    badgeColor: "#324C7A",
     price: 45.0,
     discountPrice: null,
     stock: 19,
@@ -115,6 +121,31 @@ const productSeedData = [
 ];
 
 async function main() {
+  await Promise.all(
+    [
+      { label: "Nuevo", color: "#1F8F6B", sortOrder: 0 },
+      { label: "Oferta", color: "#D94F4F", sortOrder: 1 },
+      { label: "Destacado", color: "#B7791F", sortOrder: 2 },
+    ].map((preset) =>
+      prisma.productBadgePreset.upsert({
+        where: {
+          label: preset.label,
+        },
+        update: {
+          color: preset.color,
+          isActive: true,
+          sortOrder: preset.sortOrder,
+        },
+        create: {
+          label: preset.label,
+          color: preset.color,
+          isActive: true,
+          sortOrder: preset.sortOrder,
+        },
+      }),
+    ),
+  );
+
   const [heroMedia, heroSecondaryMedia, heroTertiaryMedia] = await Promise.all(
     heroSeedAssets.map((asset) =>
       prisma.mediaAsset.upsert({
@@ -172,6 +203,7 @@ async function main() {
             description: product.description,
             href: product.href,
             badge: product.badge,
+            badgeColor: product.badgeColor,
             price: product.price,
             discountPrice: product.discountPrice,
             stock: product.stock,
@@ -183,6 +215,7 @@ async function main() {
             description: product.description,
             href: product.href,
             badge: product.badge,
+            badgeColor: product.badgeColor,
             price: product.price,
             discountPrice: product.discountPrice,
             stock: product.stock,
@@ -226,6 +259,7 @@ async function main() {
       description: product.description,
       href: product.href,
       ...(product.badge ? { badge: product.badge } : {}),
+      ...(product.badgeColor ? { badgeColor: product.badgeColor } : {}),
     })),
     trustHighlightsEyebrow: "Confianza y método",
     trustHighlightsTitle: "Una base pública pensada para claridad médica, orden y evolución.",

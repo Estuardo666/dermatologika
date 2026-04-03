@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+const hexColorSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => value.length === 0 || /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(value),
+    "Badge color must be a valid hex color",
+  );
+
 const optionalSlugSchema = z
   .string()
   .trim()
@@ -52,6 +60,7 @@ export const adminProductFormSchema = z.object({
   description: z.string().trim().min(1, "Description is required"),
   href: optionalHrefSchema,
   badge: z.string().trim().default(""),
+  badgeColor: hexColorSchema.default(""),
   price: currencyAmountSchema.default(0),
   discountPrice: optionalCurrencyAmountSchema.default(null),
   stock: stockSchema.default(0),
@@ -73,6 +82,14 @@ export const adminCatalogBulkActionSchema = z.object({
   action: z.enum(["activate", "deactivate", "delete"]),
 });
 
+export const adminProductBadgePresetFormSchema = z.object({
+  label: z.string().trim().min(1, "Label is required"),
+  color: hexColorSchema,
+  isActive: z.boolean().default(true),
+  sortOrder: z.coerce.number().int("Sort order must be an integer").min(0, "Sort order cannot be negative").default(0),
+});
+
 export type AdminCategoryFormInput = z.infer<typeof adminCategoryFormSchema>;
 export type AdminProductFormInput = z.infer<typeof adminProductFormSchema>;
 export type AdminCatalogBulkActionInput = z.infer<typeof adminCatalogBulkActionSchema>;
+export type AdminProductBadgePresetFormInput = z.infer<typeof adminProductBadgePresetFormSchema>;

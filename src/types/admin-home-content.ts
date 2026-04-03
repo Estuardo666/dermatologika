@@ -33,6 +33,7 @@ export interface AdminProductSummary {
   description: string;
   href: string;
   badge: string | null;
+  badgeColor: string | null;
   isActive: boolean;
   mediaAssetId: string | null;
   mediaAssetPublicUrl: string | null;

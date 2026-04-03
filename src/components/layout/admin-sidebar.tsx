@@ -45,6 +45,11 @@ const catalogNavigation: ReadonlyArray<NavigationItem> = [
     label: "Productos",
     icon: ProductsIcon,
   },
+  {
+    href: "/admin/catalog/badges",
+    label: "Badges",
+    icon: TagIcon,
+  },
 ] as const;
 
 const navigationSections: ReadonlyArray<{
@@ -645,6 +650,24 @@ function ProductsIcon(props: { className?: string }) {
       <path d="M12 4L19 8V16L12 20L5 16V8L12 4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       <path d="M5 8L12 12L19 8" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       <path d="M12 12V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function TagIcon(props: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={props.className}
+      aria-hidden="true"
+    >
+      <path d="M20 10.5 13 3.5H5v8l7 7 8-8Z" />
+      <circle cx="8.5" cy="8.5" r="1.25" />
     </svg>
   );
 }

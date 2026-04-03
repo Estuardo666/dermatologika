@@ -146,6 +146,7 @@ function mapProductSummary(record: {
   discountPrice: number | DecimalLike | null;
   stock: number;
   badge: string | null;
+  badgeColor: string | null;
   categoryId: string | null;
   category?: {
     id: string;
@@ -186,7 +187,9 @@ function mapProductSummary(record: {
       : null,
   };
 
-  return record.badge ? { ...baseItem, badge: record.badge } : baseItem;
+  return record.badge
+    ? { ...baseItem, badge: record.badge, ...(record.badgeColor ? { badgeColor: record.badgeColor } : {}) }
+    : baseItem;
 }
 
 function buildPagination(totalItems: number, page: number): PublicCatalogPagination {

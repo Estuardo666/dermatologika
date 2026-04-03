@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ProductBadge } from "@/components/ui/product-badge";
 import type { MediaAsset } from "@/types/media";
 import type { PublicCatalogCategoryReference } from "@/types/public-catalog";
 
@@ -10,6 +11,8 @@ interface PublicProductCardProps {
     href: string;
     price: number | null;
     discountPrice: number | null;
+    badge?: string;
+    badgeColor?: string;
     media: MediaAsset | null;
     category: PublicCatalogCategoryReference | null;
   };
@@ -68,11 +71,21 @@ export function PublicProductCard({ product }: PublicProductCardProps) {
           </span>
         ) : null}
 
-        {discountPercentage !== null ? (
-          <span className="absolute right-3 top-3 rounded-full bg-[#e35d5d] px-3 py-1 text-[0.74rem] font-medium leading-none text-white">
-            -{discountPercentage}%
-          </span>
-        ) : null}
+        <div className="absolute right-3 top-3 flex max-w-[70%] flex-col items-end gap-2">
+          {product.badge ? (
+            <ProductBadge
+              label={product.badge}
+              color={product.badgeColor}
+              className="max-w-full rounded-full border px-3 py-1"
+            />
+          ) : null}
+
+          {discountPercentage !== null ? (
+            <span className="rounded-full bg-[#e35d5d] px-3 py-1 text-[0.74rem] font-medium leading-none text-white">
+              -{discountPercentage}%
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {/* Info area */}

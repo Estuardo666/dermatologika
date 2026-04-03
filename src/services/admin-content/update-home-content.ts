@@ -58,6 +58,7 @@ export async function updateHomeContent(input: AdminHomeContentFormData) {
         description: true,
         href: true,
         badge: true,
+        badgeColor: true,
         price: true,
         discountPrice: true,
         category: {
@@ -118,6 +119,7 @@ export async function updateHomeContent(input: AdminHomeContentFormData) {
           }
         : null,
       ...(product.badge ? { badge: product.badge } : {}),
+      ...(product.badgeColor ? { badgeColor: product.badgeColor } : {}),
     };
   });
 

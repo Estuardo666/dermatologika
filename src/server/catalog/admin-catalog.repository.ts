@@ -67,6 +67,7 @@ function buildProductSearchFilter(query: string): Prisma.ProductWhereInput | und
       { description: { contains: query, mode: "insensitive" } },
       { href: { contains: query, mode: "insensitive" } },
       { badge: { contains: query, mode: "insensitive" } },
+      { badgeColor: { contains: query, mode: "insensitive" } },
       { externalSourceId: { contains: query, mode: "insensitive" } },
     ],
   };
@@ -104,6 +105,19 @@ export async function listAdminCatalogMediaAssetRecords() {
     orderBy: {
       createdAt: "desc",
     },
+  });
+}
+
+export async function listAdminProductBadgePresetRecords() {
+  return prisma.productBadgePreset.findMany({
+    orderBy: [
+      {
+        sortOrder: "asc",
+      },
+      {
+        label: "asc",
+      },
+    ],
   });
 }
 
@@ -345,6 +359,29 @@ export async function findConflictingCategoryRecord(input: {
       name: true,
       slug: true,
       href: true,
+    },
+  });
+}
+
+export async function findAdminProductBadgePresetRecord(id: string) {
+  return prisma.productBadgePreset.findUnique({
+    where: {
+      id,
+    },
+  });
+}
+
+export async function findConflictingProductBadgePresetRecord(input: {
+  excludeId?: string;
+  label: string;
+}) {
+  return prisma.productBadgePreset.findFirst({
+    where: {
+      ...(input.excludeId ? { id: { not: input.excludeId } } : {}),
+      label: {
+        equals: input.label,
+        mode: "insensitive",
+      },
     },
   });
 }

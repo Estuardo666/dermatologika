@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { MediaAssetFrame } from "@/components/media/media-asset-frame";
+import { ProductBadge } from "@/components/ui/product-badge";
 import { PublicLinkButton } from "@/components/ui/public-link-button";
 import type { PublicProductDetailData } from "@/types/public-catalog";
 
@@ -65,9 +66,7 @@ export function PublicProductDetailView({ data }: PublicProductDetailViewProps) 
                   </Link>
                 ) : null}
                 {product.badge ? (
-                  <span className="rounded-pill border border-border-brand bg-brand-soft px-3 py-1 text-caption uppercase tracking-[0.14em] text-text-brand">
-                    {product.badge}
-                  </span>
+                  <ProductBadge label={product.badge} color={product.badgeColor} className="rounded-pill border px-3 py-1" />
                 ) : null}
               </div>
 

@@ -34,6 +34,7 @@ export interface PublicCatalogProductSummary {
   discountPrice: number | null;
   stock: number;
   badge?: string;
+  badgeColor?: string;
   media: MediaAsset | null;
   category: PublicCatalogCategoryReference | null;
 }

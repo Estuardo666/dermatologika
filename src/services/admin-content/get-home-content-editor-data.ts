@@ -81,6 +81,7 @@ function mapProductSummary(record: {
   description: string;
   href: string;
   badge: string | null;
+  badgeColor: string | null;
   isActive: boolean;
   mediaAssetId: string | null;
   mediaAsset: {
@@ -94,6 +95,7 @@ function mapProductSummary(record: {
     description: record.description,
     href: record.href,
     badge: record.badge,
+    badgeColor: record.badgeColor,
     isActive: record.isActive,
     mediaAssetId: record.mediaAssetId,
     mediaAssetPublicUrl: record.mediaAsset?.publicUrl ?? null,

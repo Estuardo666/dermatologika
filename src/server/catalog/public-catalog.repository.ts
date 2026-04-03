@@ -46,6 +46,7 @@ function buildPublicProductSearchFilter(query: string): Prisma.ProductWhereInput
       { slug: { contains: query, mode: "insensitive" } },
       { description: { contains: query, mode: "insensitive" } },
       { badge: { contains: query, mode: "insensitive" } },
+      { badgeColor: { contains: query, mode: "insensitive" } },
       {
         category: {
           name: {

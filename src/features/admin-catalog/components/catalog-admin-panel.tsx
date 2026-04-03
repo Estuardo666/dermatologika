@@ -3,7 +3,9 @@
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 
 import { MediaAssetFrame } from "@/components/media/media-asset-frame";
+import { ProductBadge } from "@/components/ui/product-badge";
 import { cx } from "@/lib/utils";
+import { DEFAULT_PRODUCT_BADGE_COLOR, PRODUCT_BADGE_PRESETS } from "@/lib/product-badges";
 import { uploadMediaAsset } from "@/services/admin-content/client";
 import {
   createCategoryClient,
@@ -141,6 +143,7 @@ function buildEmptyProductForm(): AdminProductFormData {
     description: "",
     href: "",
     badge: "",
+    badgeColor: "",
     isActive: true,
     categoryId: defaultCategoryId,
     mediaAssetId: "",
@@ -167,6 +170,18 @@ function getMediaAssetLabel(
 }
 
 export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelProps) {
+  const badgePresetOptions =
+    initialData.badgePresets.filter((preset) => preset.isActive).length > 0
+      ? initialData.badgePresets.filter((preset) => preset.isActive)
+      : PRODUCT_BADGE_PRESETS.map((preset, index) => ({
+          id: `fallback-${preset.label}`,
+          label: preset.label,
+          color: preset.color,
+          isActive: true,
+          sortOrder: index,
+          createdAt: "",
+          updatedAt: "",
+        }));
   const [categories, setCategories] = useState(sortCategories(initialData.categories));
   const [products, setProducts] = useState(sortProducts(initialData.products));
   const [mediaAssets, setMediaAssets] = useState(sortMediaAssets(initialData.mediaAssets));
@@ -293,6 +308,22 @@ export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelPro
     updateProductField("href", slug ? buildProductHref(slug) : "");
   }
 
+  function applyProductBadgePreset(label: string, color: string) {
+    setProductForm((current) => ({
+      ...current,
+      badge: label,
+      badgeColor: color,
+    }));
+  }
+
+  function clearProductBadge() {
+    setProductForm((current) => ({
+      ...current,
+      badge: "",
+      badgeColor: "",
+    }));
+  }
+
   function appendMediaAsset(mediaAsset: AdminCatalogEditorData["mediaAssets"][number]) {
     setMediaAssets((current) =>
       sortMediaAssets([mediaAsset, ...current.filter((item) => item.id !== mediaAsset.id)]),
@@ -404,6 +435,7 @@ export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelPro
       description: product.description,
       href: product.href,
       badge: product.badge ?? "",
+      badgeColor: product.badgeColor ?? (product.badge ? DEFAULT_PRODUCT_BADGE_COLOR : ""),
       isActive: product.isActive,
       categoryId: product.categoryId ?? "",
       mediaAssetId: product.mediaAssetId ?? "",
@@ -963,9 +995,11 @@ export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelPro
                               {product.isActive ? "Activo" : "Inactivo"}
                             </span>
                             {product.badge ? (
-                              <span className="rounded-full border border-border-soft px-2.5 py-1 text-caption uppercase tracking-[0.12em] text-text-muted">
-                                {product.badge}
-                              </span>
+                              <ProductBadge
+                                label={product.badge}
+                                color={product.badgeColor}
+                                className="rounded-full border px-2.5 py-1"
+                              />
                             ) : null}
                           </div>
 
@@ -1071,15 +1105,61 @@ export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelPro
                   />
                 </label>
 
-                <label className="space-y-2">
-                  <span className="block text-label-md text-text-primary">Badge</span>
-                  <input
-                    value={productForm.badge}
-                    onChange={(event) => updateProductField("badge", event.target.value)}
-                    className="w-full rounded-xl border border-border-default bg-surface-canvas px-4 py-3 text-body-md text-text-primary"
-                    placeholder="Nuevo"
-                  />
-                </label>
+                <div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="block text-label-md text-text-primary">Badge</span>
+                    {productForm.badge ? (
+                      <button type="button" onClick={clearProductBadge} className="text-body-sm text-text-secondary underline-offset-4 hover:underline">
+                        Quitar
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {badgePresetOptions.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyProductBadgePreset(preset.label, preset.color)}
+                        className="rounded-full border border-border-soft px-3 py-1.5 text-body-sm text-text-primary transition hover:border-border-brand hover:bg-surface-canvas"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_132px]">
+                    <label className="space-y-2">
+                      <span className="block text-caption uppercase tracking-[0.12em] text-text-muted">Texto</span>
+                      <input
+                        value={productForm.badge}
+                        onChange={(event) => updateProductField("badge", event.target.value)}
+                        className="w-full rounded-xl border border-border-default bg-surface-canvas px-4 py-3 text-body-md text-text-primary"
+                        placeholder="Escribe tu badge"
+                      />
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="block text-caption uppercase tracking-[0.12em] text-text-muted">Color</span>
+                      <input
+                        type="color"
+                        value={productForm.badgeColor || DEFAULT_PRODUCT_BADGE_COLOR}
+                        onChange={(event) => updateProductField("badgeColor", event.target.value.toUpperCase())}
+                        className="h-[52px] w-full cursor-pointer rounded-xl border border-border-default bg-surface-canvas p-2"
+                        disabled={!productForm.badge}
+                      />
+                    </label>
+                  </div>
+
+                  {productForm.badge ? (
+                    <div className="flex items-center gap-3">
+                      <span className="text-body-sm text-text-secondary">Vista previa</span>
+                      <ProductBadge label={productForm.badge} color={productForm.badgeColor || DEFAULT_PRODUCT_BADGE_COLOR} className="rounded-full border px-3 py-1" />
+                    </div>
+                  ) : (
+                    <p className="text-body-sm text-text-secondary">Selecciona un preset o define un badge propio con color.</p>
+                  )}
+                </div>
               </div>
 
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">

@@ -26,12 +26,20 @@ export interface AdminProductFormData {
   description: string;
   href: string;
   badge: string;
+  badgeColor: string;
   price?: number;
   discountPrice?: number | null;
   stock?: number;
   isActive: boolean;
   categoryId: string;
   mediaAssetId: string;
+}
+
+export interface AdminProductBadgePresetFormData {
+  label: string;
+  color: string;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 export interface AdminCatalogCategoryItem {
@@ -55,6 +63,7 @@ export interface AdminCatalogProductItem {
   description: string;
   href: string;
   badge: string | null;
+  badgeColor: string | null;
   price: number;
   discountPrice: number | null;
   stock: number;
@@ -72,10 +81,21 @@ export interface AdminCatalogProductItem {
   updatedAt: string;
 }
 
+export interface AdminProductBadgePresetItem {
+  id: string;
+  label: string;
+  color: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminCatalogEditorData {
   categories: AdminCatalogCategoryItem[];
   products: AdminCatalogProductItem[];
   mediaAssets: AdminMediaAssetSummary[];
+  badgePresets: AdminProductBadgePresetItem[];
 }
 
 export interface AdminCatalogSummary {
@@ -147,6 +167,18 @@ export interface AdminProductRouteResponse {
   success: boolean;
   data?: {
     product: AdminCatalogProductItem;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+  timestamp: string;
+}
+
+export interface AdminProductBadgePresetRouteResponse {
+  success: boolean;
+  data?: {
+    badgePreset: AdminProductBadgePresetItem;
   };
   error?: {
     code: string;

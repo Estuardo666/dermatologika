@@ -8,6 +8,8 @@ import type {
   AdminCategoryFormData,
   AdminCategoryRouteResponse,
   AdminDeleteRouteResponse,
+  AdminProductBadgePresetFormData,
+  AdminProductBadgePresetRouteResponse,
   AdminProductFormData,
   AdminProductRouteResponse,
 } from "@/types/admin-catalog";
@@ -129,6 +131,56 @@ export async function deleteProductClient(id: string) {
   const body = await parseJsonResponse<AdminDeleteRouteResponse>(response);
   if (!response.ok || !body.success || !body.data) {
     throw new Error(body.error?.message ?? "Failed to delete product.");
+  }
+
+  return body.data.deletedId;
+}
+
+export async function createProductBadgePresetClient(input: AdminProductBadgePresetFormData) {
+  const response = await fetch("/api/admin/catalog/badges", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+
+  const body = await parseJsonResponse<AdminProductBadgePresetRouteResponse>(response);
+  if (!response.ok || !body.success || !body.data) {
+    throw new Error(body.error?.message ?? "Failed to create badge preset.");
+  }
+
+  return body.data.badgePreset;
+}
+
+export async function updateProductBadgePresetClient(id: string, input: AdminProductBadgePresetFormData) {
+  const response = await fetch(`/api/admin/catalog/badges/${id}`, {
+    method: "PUT",
+    headers: {
+      "content-type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+
+  const body = await parseJsonResponse<AdminProductBadgePresetRouteResponse>(response);
+  if (!response.ok || !body.success || !body.data) {
+    throw new Error(body.error?.message ?? "Failed to update badge preset.");
+  }
+
+  return body.data.badgePreset;
+}
+
+export async function deleteProductBadgePresetClient(id: string) {
+  const response = await fetch(`/api/admin/catalog/badges/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const body = await parseJsonResponse<AdminDeleteRouteResponse>(response);
+  if (!response.ok || !body.success || !body.data) {
+    throw new Error(body.error?.message ?? "Failed to delete badge preset.");
   }
 
   return body.data.deletedId;

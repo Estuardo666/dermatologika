@@ -10,6 +10,7 @@ import type {
   AdminCatalogEditorData,
   AdminProductLibraryData,
   AdminCatalogProductItem,
+  AdminProductBadgePresetItem,
   CatalogListFilter,
   CatalogSortDirection,
   CategoryCatalogSortField,
@@ -19,6 +20,7 @@ import {
   listAdminCatalogMediaAssetRecords,
   listAdminCategoryLibraryRecords,
   listAdminCategoryRecords,
+  listAdminProductBadgePresetRecords,
   listAdminProductLibraryRecords,
   listAdminProductRecords,
 } from "@/server/catalog/admin-catalog.repository";
@@ -187,6 +189,7 @@ export function mapAdminProductItem(record: {
   description: string;
   href: string;
   badge: string | null;
+  badgeColor: string | null;
   price: number | DecimalLike;
   discountPrice: number | DecimalLike | null;
   stock: number;
@@ -215,6 +218,7 @@ export function mapAdminProductItem(record: {
     description: record.description,
     href: record.href,
     badge: record.badge,
+    badgeColor: record.badgeColor,
     price: toNumberValue(record.price),
     discountPrice: record.discountPrice === null ? null : toNumberValue(record.discountPrice),
     stock: record.stock,
@@ -233,18 +237,45 @@ export function mapAdminProductItem(record: {
   };
 }
 
+export function mapAdminProductBadgePresetItem(record: {
+  id: string;
+  label: string;
+  color: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}): AdminProductBadgePresetItem {
+  return {
+    id: record.id,
+    label: record.label,
+    color: record.color,
+    isActive: record.isActive,
+    sortOrder: record.sortOrder,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
 export async function getCatalogAdminData(): Promise<AdminCatalogEditorData> {
-  const [categories, products, mediaAssets] = await Promise.all([
+  const [categories, products, mediaAssets, badgePresets] = await Promise.all([
     listAdminCategoryRecords(),
     listAdminProductRecords(),
     listAdminCatalogMediaAssetRecords(),
+    listAdminProductBadgePresetRecords(),
   ]);
 
   return {
     categories: categories.map(mapAdminCategoryItem),
     products: products.map(mapAdminProductItem),
     mediaAssets: mediaAssets.map(mapAdminMediaAssetSummary),
+    badgePresets: badgePresets.map(mapAdminProductBadgePresetItem),
   };
+}
+
+export async function getProductBadgePresetAdminData(): Promise<AdminProductBadgePresetItem[]> {
+  const records = await listAdminProductBadgePresetRecords();
+  return records.map(mapAdminProductBadgePresetItem);
 }
 
 export async function getCategoryLibraryData(
