@@ -24,7 +24,7 @@ export default async function PublicProductsPage({ searchParams }: PublicProduct
   };
 
   return (
-    <div className="w-full px-4 py-10 sm:px-6 sm:py-14 lg:px-8 xl:px-10 2xl:px-12">
+    <div className="w-full px-[10px] py-10 sm:px-6 sm:py-14 lg:px-8 xl:px-10 2xl:px-12">
       <div className="space-y-8">
         <section className="space-y-4">
           <span className="inline-flex rounded-pill border border-border-brand bg-brand-soft px-3 py-1 text-caption uppercase tracking-[0.14em] text-text-brand">
