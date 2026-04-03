@@ -106,6 +106,9 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
     "href": "",
     "badge": "Nuevo",
     "badgeColor": "#1F8F6B",
+    "price": 1299,
+    "discountPrice": 1099,
+    "stock": 18,
     "isActive": true,
     "categoryId": "cmnfjfhns000avpnwtlqdlar3",
     "categoryIds": ["cmnfjfhns000avpnwtlqdlar3", "cmnfjfhns000bvpnw9h2kq01"],
@@ -117,7 +120,14 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
 
 - `PUT /api/admin/catalog/products/:id`
   - Updates an existing product.
+  - When the product already has `externalSourceId`, manual updates preserve the existing `price`, `discountPrice`, and `stock` values because those fields are treated as sync-managed.
   - Returns `409 CONFLICT` when name, slug, or href would collide with another product.
+  - Requires admin session.
+
+- `POST /api/admin/catalog/products/:id/sync`
+  - Triggers a protected sync for a single product from the individual edit screen.
+  - Supports `mock` mode today and `live` mode when the provider endpoint and credentials are configured.
+  - Updates only sync-managed fields for that product: `price`, `discountPrice`, `stock`, plus sync tracking metadata.
   - Requires admin session.
 
 - `DELETE /api/admin/catalog/products/:id`
@@ -189,6 +199,15 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
 - `badgeColor`
   - Optional for products.
   - Must be a valid hex color when provided.
+- `price`
+  - Required for products in the admin flow.
+  - Must be greater than or equal to `0` and use at most 2 decimal places.
+- `discountPrice`
+  - Optional for products.
+  - Must be greater than or equal to `0`, use at most 2 decimal places, and cannot exceed `price`.
+- `stock`
+  - Required for products in the admin flow.
+  - Must be an integer greater than or equal to `0`.
 - `brand`
   - Derived from the selected brand record in product forms.
   - Existing products are backfilled from external metadata when available and fall back to `Sin marca`.
@@ -246,6 +265,12 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
 - The catalog forms now render a local image preview before upload, using the same media frame pattern as the Home editor.
 - Product forms now include badge presets (`Nuevo`, `Oferta`, `Destacado`) plus custom badge text and a color picker.
 - Product forms now expose a required `Marca` field and a searchable multi-category selector; the first selected category is treated as the primary one for legacy displays.
+- Product create/edit screens now expose local `price`, `discountPrice`, and `stock` fields, and the product library surfaces those values operationally.
+- Price and stock remain editable locally for now, but they are modeled as sync-friendly fields that can later be refreshed from the external product API.
+- When a product already carries `externalSourceId`, the product editor marks price and stock as sync-managed, locks those fields in the UI, and the backend preserves the persisted synchronized values on update.
+- The product library now highlights each record as `Local manual` or `Sincronizado` so editors can spot provider-managed products without opening the detail screen.
+- The individual product edit screen now includes a protected `Sincronizar este producto` action. Today it uses a safe simulation payload for that single record, but it is already wired through the backend sync path.
+- The individual product edit screen now includes a sync mode selector plus a visible per-product history of sync runs, including source, date, price, offer price, and stock captured after each run.
 - `Marca` is now a dedicated backend-managed entity with its own list, create, and edit screens, plus optional image upload.
 - Badge presets are now manageable globally from their own admin screen and feed the product editor as reusable quick options.
 - The product editor now renders category selection and badge controls in a single row, and category descriptions are hidden inside the category selector for a denser workflow.

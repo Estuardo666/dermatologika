@@ -41,6 +41,32 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+const adminCurrencyFormatter = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  minimumFractionDigits: 2,
+});
+
+function formatCurrency(value: number): string {
+  return adminCurrencyFormatter.format(value);
+}
+
+function getProductSyncLabel(product: AdminCatalogProductItem) {
+  if (!product.externalSourceId) {
+    return {
+      label: "Local manual",
+      tone: "bg-slate-100 text-slate-700",
+      detail: "Editable desde admin",
+    };
+  }
+
+  return {
+    label: "Sincronizado",
+    tone: "bg-amber-100 text-amber-900",
+    detail: `Fuente: ${product.externalSourceId}`,
+  };
+}
+
 function buildPaginationRange(currentPage: number, totalPages: number): number[] {
   const startPage = Math.max(1, currentPage - 2);
   const endPage = Math.min(totalPages, currentPage + 2);
@@ -530,6 +556,8 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                     {renderSortHeader("slug", "Slug")}
                     {renderSortHeader("status", "Estado")}
                     {!showCategories ? renderSortHeader("category", "Categoria") : null}
+                    {!showCategories ? <th className="px-4 py-3 font-medium">Precio</th> : null}
+                    {!showCategories ? <th className="px-4 py-3 font-medium">Stock</th> : null}
                     {!showCategories ? <th className="px-4 py-3 font-medium">Origen</th> : null}
                     {renderSortHeader("updatedAt", "Actualizado")}
                     <th className="px-4 py-3 font-medium text-right">Accion</th>
@@ -639,6 +667,18 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                                 >
                                   {product.name}
                                 </Link>
+                                <p className="text-body-sm text-text-secondary">{product.brand}</p>
+                                <div className="flex flex-wrap items-center gap-2 pt-1">
+                                  <span
+                                    className={cx(
+                                      "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
+                                      getProductSyncLabel(product).tone,
+                                    )}
+                                  >
+                                    {getProductSyncLabel(product).label}
+                                  </span>
+                                  <span className="text-caption text-text-muted">{getProductSyncLabel(product).detail}</span>
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -657,7 +697,30 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                             {product.categoryNames.join(", ") || product.categoryName || "Sin categoria"}
                           </td>
                           <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
-                            {product.externalSourceId ? `${product.externalSourceId} · v${product.syncVersion}` : "Local"}
+                            <div className="space-y-1">
+                              <p className="font-medium text-text-primary">{formatCurrency(product.price)}</p>
+                              <p>
+                                {product.discountPrice === null
+                                  ? "Sin oferta"
+                                  : `Oferta: ${formatCurrency(product.discountPrice)}`}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                            <span
+                              className={cx(
+                                "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
+                                product.stock > 0 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-700",
+                              )}
+                            >
+                              {product.stock > 0 ? `${product.stock} disponibles` : "Sin stock"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                            <div className="space-y-1">
+                              <p className="font-medium text-text-primary">{product.externalSourceId ?? "Local"}</p>
+                              <p>v{product.syncVersion}</p>
+                            </div>
                           </td>
                           <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
                             {formatDate(product.updatedAt)}

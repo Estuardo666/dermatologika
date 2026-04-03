@@ -57,6 +57,7 @@ Minimum required (by system contract):
 
 Recommended (for better storefront):
 - `price` (amount + currency)
+- `discountPrice` or `salePrice` (optional promotional price)
 - `availability` or `inStock` (boolean + optional quantity)
 - `category` or `categoryId`
 - `image` or `imageUrl` (for product cards)
@@ -81,6 +82,10 @@ Example format we expect:
   "category": "skincare",
   "price": {
     "amount": 49.99,
+    "currency": "USD"
+  },
+  "discountPrice": {
+    "amount": 39.99,
     "currency": "USD"
   },
   "inStock": true,
@@ -250,6 +255,10 @@ Examples:
 ---
 
 ## Part 3: Integration Steps (When You Have the API)
+
+Before the real provider is connected, Dermatologika already exposes a protected single-product sync route in mock mode from the admin product editor. This lets the team validate UI behavior, sync tracking, and field locking without calling a live external API.
+
+When the provider configuration exists in the environment, the same editor can switch to `live` mode for an individual product and call the external endpoint only for that record.
 
 ### Step 1: Create Adapter Implementation
 File: `src/server/catalog/external-api-adapters.ts`
@@ -439,9 +448,17 @@ Before going live with sync:
 ## References
 
 - `src/types/external-product-api.ts` — Interface contracts
+- `src/server/catalog/external-product-sync-fields.ts` — Central sync-managed price, offer, and stock normalization
 - `src/server/catalog/product-sync.service.ts` — Sync orchestration
 - `src/server/catalog/external-api-adapters.ts` — Example adapters
+- `src/app/api/admin/catalog/products/[id]/sync/route.ts` — Protected single-product sync endpoint
 - Prisma schema: `prisma/schema.prisma`
+
+### Minimum environment for live single-product sync
+
+- `EXTERNAL_PRODUCT_SYNC_ENDPOINT`
+- `EXTERNAL_PRODUCT_SYNC_BEARER_TOKEN` or `EXTERNAL_PRODUCT_SYNC_API_KEY`
+- Optional: `EXTERNAL_PRODUCT_SYNC_SOURCE_SYSTEM_ID`
 
 ---
 

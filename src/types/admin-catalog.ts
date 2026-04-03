@@ -5,6 +5,29 @@ export type CatalogSortDirection = "asc" | "desc";
 export type CategoryCatalogSortField = "name" | "slug" | "status" | "href" | "updatedAt";
 export type ProductCatalogSortField = "name" | "slug" | "status" | "category" | "href" | "updatedAt";
 export type CatalogBulkAction = "activate" | "deactivate" | "delete";
+export type AdminProductSyncMode = "mock" | "live";
+
+export interface AdminProductSyncModeOption {
+  mode: AdminProductSyncMode;
+  label: string;
+  available: boolean;
+  description: string;
+}
+
+export interface AdminProductSyncCapabilities {
+  defaultMode: AdminProductSyncMode;
+  options: AdminProductSyncModeOption[];
+}
+
+export interface AdminProductSyncHistoryItem {
+  mode: AdminProductSyncMode;
+  sourceSystemId: string;
+  syncedAt: string;
+  isSimulation: boolean;
+  price: number;
+  discountPrice: number | null;
+  stock: number;
+}
 
 export interface AdminCatalogCategoryFilterOption {
   id: string;
@@ -89,6 +112,7 @@ export interface AdminCatalogProductItem {
   externalSourceId: string | null;
   lastSyncedAt: string | null;
   syncVersion: number;
+  syncHistory: AdminProductSyncHistoryItem[];
   createdAt: string;
   updatedAt: string;
 }
@@ -240,6 +264,17 @@ export interface AdminCatalogBulkActionInput {
   action: CatalogBulkAction;
 }
 
+export interface AdminProductSyncRequest {
+  mode?: AdminProductSyncMode;
+}
+
+export interface AdminProductSyncResult {
+  mode: AdminProductSyncMode;
+  sourceSystemId: string;
+  syncedAt: string;
+  isSimulation: boolean;
+}
+
 export interface AdminCatalogBulkActionResult {
   action: CatalogBulkAction;
   processedIds: string[];
@@ -249,6 +284,19 @@ export interface AdminCatalogBulkActionResult {
 export interface AdminCatalogBulkRouteResponse {
   success: boolean;
   data?: AdminCatalogBulkActionResult;
+  error?: {
+    code: string;
+    message: string;
+  };
+  timestamp: string;
+}
+
+export interface AdminProductSyncRouteResponse {
+  success: boolean;
+  data?: {
+    product: AdminCatalogProductItem;
+    sync: AdminProductSyncResult;
+  };
   error?: {
     code: string;
     message: string;

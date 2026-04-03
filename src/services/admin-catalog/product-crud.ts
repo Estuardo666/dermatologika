@@ -220,6 +220,18 @@ export async function updateProduct(id: string, input: AdminProductFormData) {
     href: identity.href,
   });
 
+  const syncManagedPricingFields = existingProduct.externalSourceId
+    ? {
+        price: existingProduct.price,
+        discountPrice: existingProduct.discountPrice,
+        stock: existingProduct.stock,
+      }
+    : {
+        price: parsedInput.price,
+        discountPrice: parsedInput.discountPrice,
+        stock: parsedInput.stock,
+      };
+
   return prisma.product.update({
     where: {
       id,
@@ -233,9 +245,7 @@ export async function updateProduct(id: string, input: AdminProductFormData) {
       href: identity.href,
       badge: normalizeOptionalString(parsedInput.badge),
       badgeColor: normalizeOptionalBadgeColor(parsedInput),
-      price: parsedInput.price,
-      discountPrice: parsedInput.discountPrice,
-      stock: parsedInput.stock,
+      ...syncManagedPricingFields,
       isActive: parsedInput.isActive,
       categoryId: primaryCategoryId,
       categoryAssignments: {

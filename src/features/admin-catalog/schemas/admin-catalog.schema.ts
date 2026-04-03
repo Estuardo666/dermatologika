@@ -98,6 +98,10 @@ export const adminCatalogBulkActionSchema = z.object({
   action: z.enum(["activate", "deactivate", "delete"]),
 });
 
+export const adminProductSyncRequestSchema = z.object({
+  mode: z.enum(["mock", "live"]).default("mock"),
+});
+
 export const adminProductBadgePresetFormSchema = z.object({
   label: z.string().trim().min(1, "Label is required"),
   color: hexColorSchema,
@@ -113,5 +117,6 @@ export const adminBrandFormSchema = z.object({
 export type AdminCategoryFormInput = z.infer<typeof adminCategoryFormSchema>;
 export type AdminProductFormInput = z.infer<typeof adminProductFormSchema>;
 export type AdminCatalogBulkActionInput = z.infer<typeof adminCatalogBulkActionSchema>;
+export type AdminProductSyncRequestInput = z.infer<typeof adminProductSyncRequestSchema>;
 export type AdminProductBadgePresetFormInput = z.infer<typeof adminProductBadgePresetFormSchema>;
 export type AdminBrandFormInput = z.infer<typeof adminBrandFormSchema>;

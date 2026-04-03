@@ -31,6 +31,11 @@ The system is fully prepared to integrate with any external product API once you
   - ✓ Handles errors and rollback
   - ✓ Provides audit trail (who, what, when)
 
+### 2.1. **Sync-Managed Field Mapper** ✅
+- **File:** `src/server/catalog/external-product-sync-fields.ts`
+- **Purpose:** Centralizes how external `price`, `discountPrice`, and `stock` are translated into the local product model
+- **Why it matters:** Keeps sync-managed values flowing through one backend entry point instead of scattering provider rules across CRUD and sync code
+
 ### 3. **Error Handling** ✅
 - **File:** `src/server/catalog/product-sync.errors.ts`
 - **Purpose:** Typed error classes for sync operations
@@ -48,6 +53,7 @@ The system is fully prepared to integrate with any external product API once you
   - `ShopifyProductAdapter` (template for Shopify API)
   - `GenericRestApiAdapter` (template for standard REST APIs)
 - **Purpose:** Shows how to implement adapters for specific providers
+- **Current readiness:** The generic adapter now recognizes common REST fields for regular price, promotional price, and inventory quantity
 
 ### 5. **Database Schema** ✅
 - **Migration:** `prisma/migrations/20260401120000_...` (applied)
@@ -81,6 +87,7 @@ The system is fully prepared to integrate with any external product API once you
 ### Before the Meeting
 1. Print or bookmark `docs/EXTERNAL_API_SYNC_SPEC.md` (Part 1 has all 22 questions)
 2. Have this document open as reference
+3. If needed, use the protected single-product mock sync from the admin product editor to validate the UI and local sync behavior before talking to the provider
 
 ### During the Meeting
 - Ask questions from `EXTERNAL_API_SYNC_SPEC.md` Part 1
@@ -118,6 +125,12 @@ The system is fully prepared to integrate with any external product API once you
    - Schedule sync frequency (daily, hourly, on-demand)
    - Monitor sync metrics and errors
 
+### Available Today
+- A protected route already exists for syncing a single product from the individual admin edit screen.
+- Current mode supports `mock` by default, and can switch to `live` once the provider endpoint and credentials are configured.
+- This is useful for validating UI states, sync-managed field locking, and audit metadata now, before provider credentials exist.
+- The individual editor now also shows a per-product sync history so the team can inspect the last captured values after each run.
+
 ---
 
 ## Architecture Overview
@@ -133,6 +146,7 @@ ProductSyncService (orchestration)
      ├─ Detect conflicts
      ├─ Resolve conflicts
      ├─ Normalize data
+  ├─ Normalize sync-managed price / offer / stock fields
      └─ Persist to database
      ↓
 Product table (with sync tracking)
@@ -181,6 +195,7 @@ src/
 ├── types/
 │   └── external-product-api.ts          # ← Contracts & interfaces
 ├── server/catalog/
+│   ├── external-product-sync-fields.ts  # ← Central sync-managed field mapper
 │   ├── product-sync.service.ts          # ← Main orchestration
 │   ├── product-sync.errors.ts           # ← Typed errors  
 │   └── external-api-adapters.ts         # ← Example adapters

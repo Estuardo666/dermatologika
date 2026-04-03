@@ -12,6 +12,176 @@ import {
   IExternalProductAdapter,
 } from "@/types/external-product-api";
 
+const DEFAULT_EXTERNAL_CURRENCY = "USD";
+
+function generateGenericSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
+}
+
+function readMoneyAmount(candidate: unknown): number | null {
+  if (typeof candidate === "number") {
+    return Number.isFinite(candidate) && candidate >= 0 ? candidate : null;
+  }
+
+  if (typeof candidate === "string") {
+    const parsedValue = Number(candidate);
+    return Number.isFinite(parsedValue) && parsedValue >= 0 ? parsedValue : null;
+  }
+
+  if (typeof candidate === "object" && candidate !== null && "amount" in candidate) {
+    return readMoneyAmount((candidate as { amount?: unknown }).amount);
+  }
+
+  return null;
+}
+
+function readCurrency(...candidates: unknown[]): string {
+  for (const candidate of candidates) {
+    if (typeof candidate === "object" && candidate !== null && "currency" in candidate) {
+      const currency = (candidate as { currency?: unknown }).currency;
+      if (typeof currency === "string" && currency.trim().length > 0) {
+        return currency.trim().toUpperCase();
+      }
+    }
+  }
+
+  return DEFAULT_EXTERNAL_CURRENCY;
+}
+
+function readStockQuantity(...candidates: unknown[]): number | null {
+  for (const candidate of candidates) {
+    if (typeof candidate === "number") {
+      return Number.isFinite(candidate) && candidate >= 0 ? Math.floor(candidate) : null;
+    }
+
+    if (typeof candidate === "string") {
+      const parsedValue = Number(candidate);
+      if (Number.isFinite(parsedValue) && parsedValue >= 0) {
+        return Math.floor(parsedValue);
+      }
+    }
+  }
+
+  return null;
+}
+
+function mapGenericRestItemToExternalProduct(item: Record<string, unknown>): ExternalProduct {
+  const name = typeof item.name === "string"
+    ? item.name
+    : typeof item.title === "string"
+      ? item.title
+      : "Producto externo";
+  const externalId = typeof item.id === "string" || typeof item.id === "number"
+    ? String(item.id)
+    : typeof item.externalId === "string" || typeof item.externalId === "number"
+      ? String(item.externalId)
+      : name;
+  const slug = typeof item.slug === "string" && item.slug.trim().length > 0
+    ? item.slug
+    : generateGenericSlug(name);
+  const currency = readCurrency(
+    item.discountPrice,
+    item.salePrice,
+    item.offerPrice,
+    item.promotionalPrice,
+    item.regularPrice,
+    item.listPrice,
+    item.originalPrice,
+    item.price,
+  );
+  const regularPriceAmount = readMoneyAmount(
+    item.regularPrice ?? item.listPrice ?? item.originalPrice ?? item.price,
+  );
+  const discountPriceAmount = readMoneyAmount(
+    item.discountPrice ?? item.salePrice ?? item.offerPrice ?? item.promotionalPrice,
+  );
+  const availabilityObject = typeof item.availability === "object" && item.availability !== null
+    ? item.availability as { inStock?: unknown; quantity?: unknown }
+    : null;
+  const quantity = readStockQuantity(
+    availabilityObject?.quantity,
+    item.quantity,
+    item.stock,
+    item.inventory,
+  );
+  const hasAvailabilitySignal =
+    item.availability !== undefined ||
+    item.inStock !== undefined ||
+    item.quantity !== undefined ||
+    item.stock !== undefined ||
+    item.inventory !== undefined;
+
+  const product: ExternalProduct = {
+    externalId,
+    name,
+    slug,
+  };
+
+  if (typeof item.brand === "string" || typeof item.marca === "string" || typeof item.manufacturer === "string" || typeof item.vendor === "string" || typeof item.brandName === "string") {
+    product.brand = String(item.brand ?? item.marca ?? item.manufacturer ?? item.vendor ?? item.brandName);
+  }
+
+  if (typeof item.description === "string") {
+    product.description = item.description;
+  }
+
+  if (typeof item.category === "string") {
+    product.category = item.category;
+  }
+
+  if (regularPriceAmount !== null) {
+    product.price = {
+      amount: regularPriceAmount,
+      currency,
+    };
+  }
+
+  if (discountPriceAmount !== null) {
+    product.discountPrice = {
+      amount: discountPriceAmount,
+      currency,
+    };
+  }
+
+  if (hasAvailabilitySignal) {
+    const inStock = typeof availabilityObject?.inStock === "boolean"
+      ? availabilityObject.inStock
+      : typeof item.inStock === "boolean"
+        ? item.inStock
+        : quantity !== null
+          ? quantity > 0
+          : true;
+
+    product.availability = {
+      inStock,
+      ...(quantity !== null ? { quantity } : {}),
+    };
+  }
+
+  if (typeof item.image === "string" || typeof item.imageUrl === "string") {
+    product.imageUrl = String(item.image ?? item.imageUrl);
+  }
+
+  if (typeof item.badge === "string") {
+    product.badge = item.badge;
+  }
+
+  if (typeof item.updatedAt === "string" || typeof item.updatedAt === "number" || item.updatedAt instanceof Date) {
+    product.lastModifiedAt = new Date(item.updatedAt);
+  }
+
+  if (Object.keys(item).length > 0) {
+    product.additionalData = item;
+  }
+
+  return product;
+}
+
 /**
  * Example: Shopify API Adapter
  * When you get a real Shopify API, implement like this
@@ -118,40 +288,7 @@ export class GenericRestApiAdapter implements IExternalProductAdapter {
     // Map API response to standard format
     // You'll need to adjust based on actual API structure
     const products: ExternalProduct[] = (data.products || data.items || []).map(
-      (item: any) => {
-        const product: ExternalProduct = {
-          externalId: item.id,
-          name: item.name || item.title,
-          slug: item.slug || this.generateSlug(item.name || item.title),
-        };
-
-        if (item.brand || item.marca || item.manufacturer || item.vendor || item.brandName) {
-          product.brand = item.brand || item.marca || item.manufacturer || item.vendor || item.brandName;
-        }
-        if (item.description) product.description = item.description;
-        if (item.category) product.category = item.category;
-        if (item.price) {
-          product.price = {
-            amount: item.price.amount || item.price,
-            currency: item.price.currency || "USD",
-          };
-        }
-        if (item.availability || item.inStock !== undefined) {
-          product.availability = {
-            inStock: item.availability?.inStock ?? item.inStock ?? true,
-          };
-          if (item.availability?.quantity) product.availability.quantity = item.availability.quantity;
-          if (item.quantity) product.availability.quantity = item.quantity;
-        }
-        if (item.image || item.imageUrl) {
-          product.imageUrl = item.image || item.imageUrl;
-        }
-        if (item.badge) product.badge = item.badge;
-        if (item.updatedAt) product.lastModifiedAt = new Date(item.updatedAt);
-        if (Object.keys(item).length > 0) product.additionalData = item;
-
-        return product;
-      }
+      (item: Record<string, unknown>) => mapGenericRestItemToExternalProduct(item)
     );
 
     const requestId = response.headers.get("x-request-id");
@@ -189,42 +326,7 @@ export class GenericRestApiAdapter implements IExternalProductAdapter {
     }
 
     const item = await response.json();
-    const product: ExternalProduct = {
-      externalId: item.id,
-      name: item.name || item.title,
-      slug: item.slug || this.generateSlug(item.name || item.title),
-    };
-
-    if (item.brand || item.marca || item.manufacturer || item.vendor || item.brandName) {
-      product.brand = item.brand || item.marca || item.manufacturer || item.vendor || item.brandName;
-    }
-    if (item.description) product.description = item.description;
-    if (item.category) product.category = item.category;
-    if (item.price) {
-      product.price = {
-        amount: item.price.amount || item.price,
-        currency: item.price.currency || "USD",
-      };
-    }
-    if (item.availability || item.inStock !== undefined) {
-      product.availability = {
-        inStock: item.availability?.inStock ?? item.inStock ?? true,
-        ...(item.availability?.quantity !== undefined && {
-          quantity: item.availability.quantity,
-        }),
-        ...(item.quantity !== undefined && { quantity: item.quantity }),
-      };
-    }
-    if (item.image || item.imageUrl) {
-      product.imageUrl = item.image || item.imageUrl;
-    }
-    if (item.badge) product.badge = item.badge;
-    if (item.additionalData || Object.keys(item).length > 0) {
-      product.additionalData = item;
-    }
-    if (item.updatedAt) product.lastModifiedAt = new Date(item.updatedAt);
-
-    return product;
+    return mapGenericRestItemToExternalProduct(item as Record<string, unknown>);
   }
 
   validateConfig(config: ExternalProductApiConfig) {
@@ -264,14 +366,5 @@ export class GenericRestApiAdapter implements IExternalProductAdapter {
         error: error instanceof Error ? error.message : "Connection failed",
       };
     }
-  }
-
-  private generateSlug(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .trim();
   }
 }

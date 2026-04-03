@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { Prisma } from "@prisma/client";
+
 import type { AdminMediaAssetSummary } from "@/types/admin-home-content";
 import type {
   AdminBrandItem,
@@ -12,6 +14,7 @@ import type {
   AdminProductLibraryData,
   AdminCatalogProductItem,
   AdminProductBadgePresetItem,
+  AdminProductSyncHistoryItem,
   CatalogListFilter,
   CatalogSortDirection,
   CategoryCatalogSortField,
@@ -35,6 +38,47 @@ interface DecimalLike {
 
 function toNumberValue(value: number | DecimalLike): number {
   return typeof value === "number" ? value : value.toNumber();
+}
+
+function parseAdminProductSyncHistory(externalMetadata: Prisma.JsonValue | null | undefined): AdminProductSyncHistoryItem[] {
+  if (!externalMetadata || typeof externalMetadata !== "object" || Array.isArray(externalMetadata)) {
+    return [];
+  }
+
+  const metadata = externalMetadata as Record<string, unknown>;
+  const rawHistory = metadata.syncHistory;
+  if (!Array.isArray(rawHistory)) {
+    return [];
+  }
+
+  return rawHistory.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      return [];
+    }
+
+    const item = entry as Record<string, unknown>;
+    const mode = item.mode === "live" ? "live" : item.mode === "mock" ? "mock" : null;
+    const sourceSystemId = typeof item.sourceSystemId === "string" ? item.sourceSystemId : null;
+    const syncedAt = typeof item.syncedAt === "string" ? item.syncedAt : null;
+    const isSimulation = typeof item.isSimulation === "boolean" ? item.isSimulation : mode === "mock";
+    const price = typeof item.price === "number" ? item.price : null;
+    const discountPrice = item.discountPrice === null || typeof item.discountPrice === "number" ? item.discountPrice : null;
+    const stock = typeof item.stock === "number" ? item.stock : null;
+
+    if (!mode || !sourceSystemId || !syncedAt || price === null || stock === null) {
+      return [];
+    }
+
+    return [{
+      mode,
+      sourceSystemId,
+      syncedAt,
+      isSimulation,
+      price,
+      discountPrice,
+      stock,
+    }];
+  });
 }
 
 interface CatalogListSearchParams {
@@ -248,6 +292,7 @@ export function mapAdminProductItem(record: {
   externalSourceId: string | null;
   lastSyncedAt: Date | null;
   syncVersion: number;
+  externalMetadata?: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
 }): AdminCatalogProductItem {
@@ -281,6 +326,7 @@ export function mapAdminProductItem(record: {
     externalSourceId: record.externalSourceId,
     lastSyncedAt: record.lastSyncedAt ? record.lastSyncedAt.toISOString() : null,
     syncVersion: record.syncVersion,
+    syncHistory: parseAdminProductSyncHistory(record.externalMetadata),
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   };

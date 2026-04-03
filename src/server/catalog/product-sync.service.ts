@@ -30,6 +30,7 @@ import {
   InvalidConfigurationError,
   ExternalApiFetchError,
 } from "./product-sync.errors";
+import { normalizeSyncManagedProductFields } from "./external-product-sync-fields";
 
 export interface ProductSyncConfig {
   // External API adapter implementation
@@ -340,6 +341,12 @@ export class ProductSyncService {
     config: ProductSyncConfig,
     existingLocal?: any
   ) {
+    const syncManagedFields = normalizeSyncManagedProductFields(externalProduct, {
+      price: existingLocal?.price,
+      discountPrice: existingLocal?.discountPrice,
+      stock: existingLocal?.stock,
+    });
+
     return {
       name: externalProduct.name,
       brand: externalProduct.brand || existingLocal?.brand || "Sin marca",
@@ -348,6 +355,9 @@ export class ProductSyncService {
       href: `/product/${externalProduct.slug}`, // Or derive from existing
       badge: externalProduct.badge || existingLocal?.badge,
       badgeColor: existingLocal?.badgeColor ?? null,
+      price: syncManagedFields.price,
+      discountPrice: syncManagedFields.discountPrice,
+      stock: syncManagedFields.stock,
       isActive: true,
       externalId: externalProduct.externalId,
       externalSourceId: config.sourceSystemId,

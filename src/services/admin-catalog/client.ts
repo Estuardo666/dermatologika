@@ -14,6 +14,8 @@ import type {
   AdminProductBadgePresetRouteResponse,
   AdminProductFormData,
   AdminProductRouteResponse,
+  AdminProductSyncRequest,
+  AdminProductSyncRouteResponse,
 } from "@/types/admin-catalog";
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -186,6 +188,24 @@ export async function deleteProductClient(id: string) {
   }
 
   return body.data.deletedId;
+}
+
+export async function syncProductClient(id: string, input: AdminProductSyncRequest = { mode: "mock" }) {
+  const response = await fetch(`/api/admin/catalog/products/${id}/sync`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+
+  const body = await parseJsonResponse<AdminProductSyncRouteResponse>(response);
+  if (!response.ok || !body.success || !body.data) {
+    throw new Error(body.error?.message ?? "Failed to sync product.");
+  }
+
+  return body.data;
 }
 
 export async function createProductBadgePresetClient(input: AdminProductBadgePresetFormData) {

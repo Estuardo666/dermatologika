@@ -10,6 +10,11 @@
  * Minimal required data from external product
  * This is the intersection of what any provider should offer
  */
+export interface ExternalProductMoney {
+  amount: number;
+  currency: string;
+}
+
 export interface ExternalProduct {
   // Unique identifier in the external system (required for deduplication)
   externalId: string;
@@ -26,10 +31,8 @@ export interface ExternalProduct {
   category?: string;
 
   // Pricing information
-  price?: {
-    amount: number;
-    currency: string; // ISO 4217 code, e.g., "USD"
-  };
+  price?: ExternalProductMoney;
+  discountPrice?: ExternalProductMoney;
 
   // Stock/availability
   availability?: {

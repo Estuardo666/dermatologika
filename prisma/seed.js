@@ -61,7 +61,7 @@ const productSeedData = [
     badgeColor: "#B7791F",
     price: 34.9,
     discountPrice: 29.9,
-    stock: 32,
+    stock: 5,
   },
   {
     slug: "product-balance",
@@ -72,7 +72,7 @@ const productSeedData = [
     badgeColor: "#2F6FDE",
     price: 26.5,
     discountPrice: 22.5,
-    stock: 28,
+    stock: 5,
   },
   {
     slug: "product-renewal",
@@ -83,7 +83,7 @@ const productSeedData = [
     badgeColor: null,
     price: 41.0,
     discountPrice: null,
-    stock: 21,
+    stock: 0,
   },
   {
     slug: "routine-recovery",
@@ -94,7 +94,7 @@ const productSeedData = [
     badgeColor: "#1F8F6B",
     price: 37.0,
     discountPrice: null,
-    stock: 25,
+    stock: 1,
   },
   {
     slug: "routine-defense",
@@ -105,7 +105,7 @@ const productSeedData = [
     badgeColor: "#8A5CF6",
     price: 31.5,
     discountPrice: null,
-    stock: 30,
+    stock: 42,
   },
   {
     slug: "routine-night",
@@ -116,7 +116,7 @@ const productSeedData = [
     badgeColor: "#324C7A",
     price: 45.0,
     discountPrice: null,
-    stock: 19,
+    stock: 17,
   },
 ];
 

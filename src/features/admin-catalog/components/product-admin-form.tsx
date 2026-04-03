@@ -19,12 +19,15 @@ import { uploadMediaAsset } from "@/services/admin-content/client";
 import {
 	createProductClient,
 	deleteProductClient,
+	syncProductClient,
 	updateProductClient,
 } from "@/services/admin-catalog/client";
 import type {
 	AdminCatalogEditorData,
 	AdminCatalogProductItem,
 	AdminProductFormData,
+	AdminProductSyncCapabilities,
+	AdminProductSyncResult,
 } from "@/types/admin-catalog";
 import type { MediaAsset } from "@/types/media";
 
@@ -34,6 +37,7 @@ interface ProductAdminFormProps {
 	initialData: AdminCatalogEditorData;
 	mode: "create" | "edit";
 	product?: AdminCatalogProductItem | null;
+	syncCapabilities: AdminProductSyncCapabilities;
 }
 
 function buildProductForm(
@@ -53,6 +57,9 @@ function buildProductForm(
 			href: "",
 			badge: "",
 			badgeColor: "",
+			price: 0,
+			discountPrice: null,
+			stock: 0,
 			isActive: true,
 			categoryId: defaultCategory?.id ?? "",
 			categoryIds: defaultCategory ? [defaultCategory.id] : [],
@@ -69,6 +76,9 @@ function buildProductForm(
 		href: product.href,
 		badge: product.badge ?? "",
 		badgeColor: product.badgeColor ?? (product.badge ? DEFAULT_PRODUCT_BADGE_COLOR : ""),
+		price: product.price,
+		discountPrice: product.discountPrice,
+		stock: product.stock,
 		isActive: product.isActive,
 		categoryId: product.categoryId ?? "",
 		categoryIds: product.categoryIds,
@@ -150,10 +160,24 @@ function formatDate(value: string | null): string {
 	}).format(new Date(value));
 }
 
+const adminCurrencyFormatter = new Intl.NumberFormat("es-MX", {
+	style: "currency",
+	currency: "MXN",
+	minimumFractionDigits: 2,
+});
+
+function formatCurrency(value: number | null | undefined): string {
+	if (typeof value !== "number" || Number.isNaN(value)) {
+		return "Pendiente";
+	}
+
+	return adminCurrencyFormatter.format(value);
+}
+
 const adminFieldClassName = "w-full rounded-xl border border-[#c0d4be] bg-[#f8fbf7] px-4 py-3 text-body-md text-text-primary transition-[border-color,box-shadow,background-color] duration-[200ms] ease-soft hover:border-brand-primary hover:bg-[#fbfdfb] active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle";
 const adminReadonlyFieldClassName = "w-full rounded-lg border border-[#c0d4be] bg-[#f8fbf7] px-3 py-2 text-caption text-text-secondary sm:text-body-sm";
 
-export function ProductAdminForm({ initialData, mode, product }: ProductAdminFormProps) {
+export function ProductAdminForm({ initialData, mode, product, syncCapabilities }: ProductAdminFormProps) {
 	const router = useRouter();
 	const badgePresetOptions =
 		initialData.badgePresets.filter((preset) => preset.isActive).length > 0
@@ -177,12 +201,20 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 	const [categoryQuery, setCategoryQuery] = useState("");
 	const [submissionState, setSubmissionState] = useState<SubmissionState>("idle");
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [syncState, setSyncState] = useState<SubmissionState>("idle");
+	const [syncFeedback, setSyncFeedback] = useState<{
+		tone: "success" | "error";
+		message: string;
+		details?: AdminProductSyncResult;
+	} | null>(null);
+	const [selectedSyncMode, setSelectedSyncMode] = useState(syncCapabilities.defaultMode);
 	const [savedSnapshot, setSavedSnapshot] = useState(() =>
 		JSON.stringify(buildProductForm(product, initialData.categories, initialData.brands)),
 	);
 	const [savedAt, setSavedAt] = useState<string | null>(product?.updatedAt ?? null);
 	const selectedMedia = initialData.mediaAssets.find((asset) => asset.id === formData.mediaAssetId) ?? null;
 	const selectedBrand = initialData.brands.find((brand) => brand.id === formData.brandId) ?? null;
+	const syncManagedSource = persistedProduct?.externalSourceId ?? null;
 	const normalizedCategoryQuery = categoryQuery.trim().toLocaleLowerCase("es");
 	const selectedCategories = formData.categoryIds
 		.map((categoryId) => initialData.categories.find((category) => category.id === categoryId) ?? null)
@@ -223,6 +255,9 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 					? "border-[#f2b27f] bg-[#fff4e8] text-[#b45309]"
 					: "border-emerald-200 bg-emerald-50 text-emerald-800";
 	const showUnsavedWarning = submissionState !== "saving" && submissionState !== "error" && isDirty;
+	const areInventoryFieldsSyncManaged = Boolean(syncManagedSource);
+	const currentSyncHistory = persistedProduct?.syncHistory ?? product?.syncHistory ?? [];
+	const selectedSyncModeOption = syncCapabilities.options.find((option) => option.mode === selectedSyncMode) ?? syncCapabilities.options[0];
 
 	useEffect(() => {
 		return () => {
@@ -280,6 +315,45 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 		}));
 	}
 
+	function updatePriceValue(value: string) {
+		const normalizedValue = value.trim();
+		if (normalizedValue.length === 0) {
+			updateField("price", 0);
+			return;
+		}
+
+		const nextValue = Number(normalizedValue);
+		if (Number.isFinite(nextValue)) {
+			updateField("price", nextValue);
+		}
+	}
+
+	function updateDiscountPriceValue(value: string) {
+		const normalizedValue = value.trim();
+		if (normalizedValue.length === 0) {
+			updateField("discountPrice", null);
+			return;
+		}
+
+		const nextValue = Number(normalizedValue);
+		if (Number.isFinite(nextValue)) {
+			updateField("discountPrice", nextValue);
+		}
+	}
+
+	function updateStockValue(value: string) {
+		const normalizedValue = value.trim();
+		if (normalizedValue.length === 0) {
+			updateField("stock", 0);
+			return;
+		}
+
+		const nextValue = Number.parseInt(normalizedValue, 10);
+		if (Number.isFinite(nextValue)) {
+			updateField("stock", nextValue);
+		}
+	}
+
 	function toggleCategorySelection(categoryId: string) {
 		markAsDirty();
 		setFormData((current) => {
@@ -322,6 +396,59 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 		setImageFile(file);
 		setImagePreviewUrl(file ? URL.createObjectURL(file) : null);
 		setErrorMessage(null);
+	}
+
+	async function handleSyncProduct() {
+		if (!persistedProduct) {
+			return;
+		}
+
+		const selectedOption = syncCapabilities.options.find((option) => option.mode === selectedSyncMode);
+		if (!selectedOption?.available) {
+			setSyncState("error");
+			setSyncFeedback({
+				tone: "error",
+				message: selectedOption?.description ?? "El modo de sync seleccionado no está disponible.",
+			});
+			return;
+		}
+
+		if (
+			isDirty &&
+			!window.confirm(
+				"Hay cambios sin guardar. Si sincronizas ahora, el formulario se recargará con la versión guardada del producto y perderás esos cambios pendientes.",
+			)
+		) {
+			return;
+		}
+
+		setSyncState("saving");
+		setSyncFeedback(null);
+
+		try {
+			const result = await syncProductClient(persistedProduct.id, { mode: selectedSyncMode });
+			const nextFormData = buildProductForm(result.product, initialData.categories, initialData.brands);
+
+			setFormData(nextFormData);
+			setPersistedProduct(result.product);
+			setSavedSnapshot(JSON.stringify(nextFormData));
+			setSavedAt(result.product.updatedAt);
+			resetPendingImageSelection();
+			setSubmissionState("success");
+			setSyncState("success");
+			setSyncFeedback({
+				tone: "success",
+				message: `${result.sync.isSimulation ? "Sincronización simulada" : "Sincronización real"} completada ${formatDate(result.sync.syncedAt).toLowerCase()}.`,
+				details: result.sync,
+			});
+			router.refresh();
+		} catch (error) {
+			setSyncState("error");
+			setSyncFeedback({
+				tone: "error",
+				message: error instanceof Error ? error.message : "No se pudo sincronizar el producto.",
+			});
+		}
 	}
 
 	async function uploadProductImage(file: File, name: string) {
@@ -497,6 +624,79 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 							</select>
 						</label>
 
+						<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div>
+									<span className="block text-label-md text-text-primary">Precio e inventario</span>
+									<p className="text-body-sm text-text-secondary">
+										{areInventoryFieldsSyncManaged
+											? `Este producto está vinculado a ${syncManagedSource} y estos valores quedan bloqueados para evitar drift manual.`
+											: "Estos valores son locales por ahora y podrán ser reemplazados por el sync externo en el futuro."}
+									</p>
+								</div>
+								<span
+									className={cx(
+										"inline-flex w-fit rounded-full px-3 py-1 text-label-sm",
+										areInventoryFieldsSyncManaged
+											? "bg-amber-100 text-amber-900"
+											: "bg-slate-100 text-slate-700",
+									)}
+								>
+									{areInventoryFieldsSyncManaged ? "Gestionado por sync" : "Editable localmente"}
+								</span>
+							</div>
+
+							<div className="grid gap-4 md:grid-cols-3">
+							<label className="space-y-2 rounded-2xl border border-border-soft bg-surface-canvas p-4">
+								<span className="block text-label-md text-text-primary">Precio regular</span>
+								<input
+									type="number"
+									min="0"
+									step="0.01"
+									inputMode="decimal"
+									value={formData.price ?? 0}
+									onChange={(event) => updatePriceValue(event.target.value)}
+									className={adminFieldClassName}
+									placeholder="0.00"
+									disabled={areInventoryFieldsSyncManaged}
+								/>
+								<p className="text-body-sm text-text-secondary">Valor local usado hoy por la tienda mientras no llegue desde la API externa.</p>
+							</label>
+
+							<label className="space-y-2 rounded-2xl border border-border-soft bg-surface-canvas p-4">
+								<span className="block text-label-md text-text-primary">Precio oferta</span>
+								<input
+									type="number"
+									min="0"
+									step="0.01"
+									inputMode="decimal"
+									value={formData.discountPrice ?? ""}
+									onChange={(event) => updateDiscountPriceValue(event.target.value)}
+									className={adminFieldClassName}
+									placeholder="Sin oferta"
+									disabled={areInventoryFieldsSyncManaged}
+								/>
+								<p className="text-body-sm text-text-secondary">Déjalo vacío si no hay descuento activo.</p>
+							</label>
+
+							<label className="space-y-2 rounded-2xl border border-border-soft bg-surface-canvas p-4">
+								<span className="block text-label-md text-text-primary">Stock</span>
+								<input
+									type="number"
+									min="0"
+									step="1"
+									inputMode="numeric"
+									value={formData.stock ?? 0}
+									onChange={(event) => updateStockValue(event.target.value)}
+									className={adminFieldClassName}
+									placeholder="0"
+									disabled={areInventoryFieldsSyncManaged}
+								/>
+								<p className="text-body-sm text-text-secondary">Existencia local editable. El sync futuro podrá actualizarla desde la API.</p>
+							</label>
+							</div>
+						</div>
+
 						<div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
 							<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
 								<div className="flex items-center justify-between gap-3">
@@ -633,26 +833,121 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 
 				<aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
 					<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
-						<h2 className="text-section-lg text-text-primary">Estado del producto</h2>
-						<div className="mt-4 space-y-3 text-body-sm text-text-secondary">
-							<p><span className="text-text-primary">Guardado:</span> {saveStatusLabel}</p>
-							<p><span className="text-text-primary">Modo:</span> {mode === "create" ? "Creacion" : "Edicion"}</p>
-							<p><span className="text-text-primary">Slug:</span> {formData.slug || "Pendiente"}</p>
-							<p><span className="text-text-primary">Href:</span> {formData.href || "Pendiente"}</p>
-							<p><span className="text-text-primary">Marca:</span> {formData.brand || "Pendiente"}</p>
-							<p><span className="text-text-primary">Categorias:</span> {selectedCategories.map((category) => category.name).join(", ") || "Sin categoria"}</p>
-							<p><span className="text-text-primary">Estado:</span> {formData.isActive ? "Activo" : "Inactivo"}</p>
-							<p><span className="text-text-primary">Badge:</span> {formData.badge || "Sin badge"}</p>
-							{formData.badge ? (
-								<div className="flex items-center gap-2">
-									<span className="text-text-primary">Preview:</span>
-									<ProductBadge label={formData.badge} color={formData.badgeColor || DEFAULT_PRODUCT_BADGE_COLOR} className="rounded-full border px-3 py-1" />
+						<h2 className="text-section-lg font-semibold text-text-primary">Estado del producto</h2>
+						
+						<div className="mt-5 space-y-2 text-body-sm leading-relaxed">
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Guardado</span>
+								<span className="text-label-md font-medium text-text-primary text-right leading-snug">{saveStatusLabel}</span>
+							</div>
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Modo</span>
+								<span className="text-label-md font-medium text-text-primary text-right">{mode === "create" ? "Creación" : "Edición"}</span>
+							</div>
+
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Slug</span>
+								<span className="text-label-md font-medium text-text-primary text-right leading-snug">{formData.slug || "—"}</span>
+							</div>
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Href</span>
+								<span className="text-label-md font-medium text-text-primary text-right break-words leading-snug">{formData.href || "—"}</span>
+							</div>
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Marca</span>
+								<span className="text-label-md font-medium text-text-primary text-right leading-snug">{formData.brand || "—"}</span>
+							</div>
+
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Precio regular</span>
+								<span className="text-label-md font-semibold text-text-primary">{formatCurrency(formData.price)}</span>
+							</div>
+							{formData.discountPrice ? (
+								<div className="flex items-start justify-between gap-3">
+									<span className="text-text-secondary whitespace-nowrap">Precio oferta</span>
+									<span className="text-label-md font-semibold text-emerald-700">{formatCurrency(formData.discountPrice)}</span>
 								</div>
 							) : null}
+
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Stock</span>
+								<span className={cx("text-label-md font-semibold", formData.stock === 0 ? "text-status-error" : formData.stock === 1 ? "text-status-warning" : "text-text-primary")}>
+									{formData.stock === 0 ? "Sin stock" : `${formData.stock} unidades`}
+								</span>
+							</div>
+
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Categorías</span>
+								<span className="text-label-md font-medium text-text-primary text-right break-words leading-snug">
+									{selectedCategories.length > 0 ? selectedCategories.map((c) => c.name).join(", ") : "—"}
+								</span>
+							</div>
+							
+							{formData.badge ? (
+								<div className="flex items-start justify-between gap-3">
+									<span className="text-text-secondary whitespace-nowrap">Badge</span>
+									<ProductBadge label={formData.badge} color={formData.badgeColor || DEFAULT_PRODUCT_BADGE_COLOR} className="rounded-full border px-2 py-0.5 text-xs" />
+								</div>
+							) : null}
+
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Estado</span>
+								<span className={cx("text-label-md font-medium", formData.isActive ? "text-emerald-700" : "text-text-secondary")}>
+									{formData.isActive ? "Activo" : "Inactivo"}
+								</span>
+							</div>
+
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Origen</span>
+								<span className="text-label-md font-medium text-text-primary">
+									{persistedProduct?.externalSourceId ? persistedProduct.externalSourceId : "Local"}
+								</span>
+							</div>
 						</div>
 
 						<div className="mt-5 space-y-2 border-t border-border-soft pt-5">
 							{errorMessage ? <p className="mb-2 text-body-sm text-status-error">{errorMessage}</p> : null}
+							{mode === "edit" && persistedProduct ? (
+								<>
+									<div className="space-y-2 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+										<label className="space-y-2 block" htmlFor="product-sync-mode">
+											<span className="block text-label-md text-text-primary">Modo de sync</span>
+											<select
+												id="product-sync-mode"
+												value={selectedSyncMode}
+												onChange={(event) => setSelectedSyncMode(event.target.value as typeof selectedSyncMode)}
+												className={adminFieldClassName}
+												disabled={syncState === "saving" || submissionState === "saving"}
+											>
+												{syncCapabilities.options.map((option) => (
+													<option key={option.mode} value={option.mode} disabled={!option.available}>
+														{option.label}{option.available ? "" : " (no disponible)"}
+													</option>
+												))}
+											</select>
+										</label>
+										<p className="text-body-sm text-text-secondary">
+											{selectedSyncModeOption?.description}
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={handleSyncProduct}
+										disabled={submissionState === "saving" || syncState === "saving"}
+										className="inline-flex w-full min-h-11 items-center justify-center rounded-pill border border-amber-300 bg-amber-50 px-6 py-3 text-label-md text-amber-900 transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-amber-400 hover:bg-amber-100 active:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas disabled:opacity-50"
+									>
+										{syncState === "saving" ? "Sincronizando..." : "Sincronizar este producto"}
+									</button>
+									<p className="text-body-sm text-text-secondary">
+										Usa la ruta protegida del admin para sincronizar solo este producto. Puedes elegir simulación o proveedor real cuando esté configurado.
+									</p>
+									{syncFeedback ? (
+										<p className={cx("text-body-sm", syncFeedback.tone === "success" ? "text-status-success" : "text-status-error")} role="status">
+											{syncFeedback.message}
+										</p>
+									) : null}
+								</>
+							) : null}
 							<button type="submit" form="product-form" disabled={submissionState === "saving"} className="inline-flex w-full min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:bg-emerald-600 active:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas disabled:opacity-50">
 								{submissionState === "saving" ? "Guardando..." : mode === "edit" ? "Actualizar producto" : "Crear producto"}
 							</button>
@@ -670,15 +965,31 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 					</section>
 
 					{product ? (
-						<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
-							<h2 className="text-section-lg text-text-primary">Contexto</h2>
-							<div className="mt-4 space-y-3 text-body-sm text-text-secondary">
-								<p>Total de productos: {initialData.products.length}</p>
-								<p>Productos activos: {initialData.products.filter((item) => item.isActive).length}</p>
-								<p>Ultimo sync: {formatDate(product.lastSyncedAt)}</p>
-								<p>Origen: {product.externalSourceId ?? "Local manual"}</p>
-							</div>
-						</section>
+						<>
+							<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+								<h2 className="text-section-lg text-text-primary">Historial de sync</h2>
+								<div className="mt-4 space-y-3">
+									{currentSyncHistory.length > 0 ? (
+										currentSyncHistory.map((entry) => (
+											<div key={`${entry.syncedAt}-${entry.mode}-${entry.sourceSystemId}`} className="rounded-2xl border border-border-soft bg-surface-subtle p-4 text-body-sm text-text-secondary">
+												<div className="flex flex-wrap items-center gap-2">
+													<span className={cx("inline-flex rounded-full px-2.5 py-0.5 text-label-sm", entry.isSimulation ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-800")}>
+														{entry.isSimulation ? "Simulación" : "Real"}
+													</span>
+													<span className="font-medium text-text-primary">{entry.sourceSystemId}</span>
+												</div>
+												<p className="mt-2"><span className="text-text-primary">Fecha:</span> {formatDate(entry.syncedAt)}</p>
+												<p><span className="text-text-primary">Precio:</span> {formatCurrency(entry.price)}</p>
+												<p><span className="text-text-primary">Oferta:</span> {entry.discountPrice === null ? "Sin oferta" : formatCurrency(entry.discountPrice)}</p>
+												<p><span className="text-text-primary">Stock:</span> {entry.stock} unidades</p>
+											</div>
+										))
+									) : (
+										<p className="rounded-2xl border border-dashed border-border-soft px-4 py-5 text-body-sm text-text-secondary">Aún no hay sincronizaciones registradas para este producto.</p>
+									)}
+								</div>
+							</section>
+						</>
 					) : null}
 				</aside>
 			</div>
