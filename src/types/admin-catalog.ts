@@ -1,0 +1,189 @@
+import type { AdminMediaAssetSummary } from "@/types/admin-home-content";
+
+export type CatalogListFilter = "all" | "active" | "inactive";
+export type CatalogSortDirection = "asc" | "desc";
+export type CategoryCatalogSortField = "name" | "slug" | "status" | "href" | "updatedAt";
+export type ProductCatalogSortField = "name" | "slug" | "status" | "category" | "href" | "updatedAt";
+export type CatalogBulkAction = "activate" | "deactivate" | "delete";
+
+export interface AdminCatalogCategoryFilterOption {
+  id: string;
+  name: string;
+}
+
+export interface AdminCategoryFormData {
+  slug: string;
+  name: string;
+  description: string;
+  href: string;
+  isActive: boolean;
+  mediaAssetId: string;
+}
+
+export interface AdminProductFormData {
+  slug: string;
+  name: string;
+  description: string;
+  href: string;
+  badge: string;
+  price?: number;
+  discountPrice?: number | null;
+  stock?: number;
+  isActive: boolean;
+  categoryId: string;
+  mediaAssetId: string;
+}
+
+export interface AdminCatalogCategoryItem {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  href: string;
+  isActive: boolean;
+  mediaAssetId: string | null;
+  mediaAssetPublicUrl: string | null;
+  mediaAssetAltText: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminCatalogProductItem {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  href: string;
+  badge: string | null;
+  price: number;
+  discountPrice: number | null;
+  stock: number;
+  isActive: boolean;
+  categoryId: string | null;
+  categoryName: string | null;
+  mediaAssetId: string | null;
+  mediaAssetPublicUrl: string | null;
+  mediaAssetAltText: string;
+  externalId: string | null;
+  externalSourceId: string | null;
+  lastSyncedAt: string | null;
+  syncVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminCatalogEditorData {
+  categories: AdminCatalogCategoryItem[];
+  products: AdminCatalogProductItem[];
+  mediaAssets: AdminMediaAssetSummary[];
+}
+
+export interface AdminCatalogSummary {
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+}
+
+export interface AdminCatalogPagination {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+export interface AdminCatalogListFilters {
+  query: string;
+  status: CatalogListFilter;
+  categoryId: string;
+}
+
+export interface AdminCatalogSorting<TField extends string = string> {
+  sortBy: TField;
+  sortDirection: CatalogSortDirection;
+}
+
+export interface AdminCategoryLibraryData {
+  items: AdminCatalogCategoryItem[];
+  summary: AdminCatalogSummary;
+  pagination: AdminCatalogPagination;
+  filters: AdminCatalogListFilters;
+  sorting: AdminCatalogSorting<CategoryCatalogSortField>;
+}
+
+export interface AdminProductLibraryData {
+  items: AdminCatalogProductItem[];
+  summary: AdminCatalogSummary;
+  pagination: AdminCatalogPagination;
+  filters: AdminCatalogListFilters;
+  sorting: AdminCatalogSorting<ProductCatalogSortField>;
+  categoryOptions: AdminCatalogCategoryFilterOption[];
+}
+
+export interface AdminCatalogRouteResponse {
+  success: boolean;
+  data?: AdminCatalogEditorData;
+  error?: {
+    code: string;
+    message: string;
+  };
+  timestamp: string;
+}
+
+export interface AdminCategoryRouteResponse {
+  success: boolean;
+  data?: {
+    category: AdminCatalogCategoryItem;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+  timestamp: string;
+}
+
+export interface AdminProductRouteResponse {
+  success: boolean;
+  data?: {
+    product: AdminCatalogProductItem;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+  timestamp: string;
+}
+
+export interface AdminDeleteRouteResponse {
+  success: boolean;
+  data?: {
+    deletedId: string;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+  timestamp: string;
+}
+
+export interface AdminCatalogBulkActionInput {
+  ids: string[];
+  action: CatalogBulkAction;
+}
+
+export interface AdminCatalogBulkActionResult {
+  action: CatalogBulkAction;
+  processedIds: string[];
+  processedCount: number;
+}
+
+export interface AdminCatalogBulkRouteResponse {
+  success: boolean;
+  data?: AdminCatalogBulkActionResult;
+  error?: {
+    code: string;
+    message: string;
+  };
+  timestamp: string;
+}

@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+:root {
+  --app-background: #fcfbf8;
+  --app-foreground: #171614;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--app-background);
+  color: var(--app-foreground);
+}
+
+.bg-surface-subtle {
+  background-color: #ffffff;
+}
