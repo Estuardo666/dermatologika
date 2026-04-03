@@ -189,7 +189,7 @@ export function mapAdminProductItem(record: {
   description: string;
   href: string;
   badge: string | null;
-  badgeColor: string | null;
+  badgeColor?: string | null;
   price: number | DecimalLike;
   discountPrice: number | DecimalLike | null;
   stock: number;
@@ -218,7 +218,7 @@ export function mapAdminProductItem(record: {
     description: record.description,
     href: record.href,
     badge: record.badge,
-    badgeColor: record.badgeColor,
+    badgeColor: record.badgeColor ?? null,
     price: toNumberValue(record.price),
     discountPrice: record.discountPrice === null ? null : toNumberValue(record.discountPrice),
     stock: record.stock,
