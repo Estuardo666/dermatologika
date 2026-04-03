@@ -140,12 +140,15 @@ function buildEmptyProductForm(): AdminProductFormData {
   return {
     slug: "",
     name: "",
+    brand: "Sin marca",
+    brandId: "",
     description: "",
     href: "",
     badge: "",
     badgeColor: "",
     isActive: true,
     categoryId: defaultCategoryId,
+    categoryIds: defaultCategoryId ? [defaultCategoryId] : [],
     mediaAssetId: "",
   };
 }
@@ -432,12 +435,15 @@ export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelPro
     setProductForm({
       slug: product.slug,
       name: product.name,
+      brand: product.brand,
+      brandId: product.brandId ?? "",
       description: product.description,
       href: product.href,
       badge: product.badge ?? "",
       badgeColor: product.badgeColor ?? (product.badge ? DEFAULT_PRODUCT_BADGE_COLOR : ""),
       isActive: product.isActive,
       categoryId: product.categoryId ?? "",
+      categoryIds: product.categoryIds,
       mediaAssetId: product.mediaAssetId ?? "",
     });
     setProductSubmissionState("idle");
@@ -504,6 +510,8 @@ export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelPro
           ...productForm,
           slug,
           href: slug ? buildProductHref(slug) : "",
+          categoryId: productForm.categoryIds[0] ?? productForm.categoryId,
+          categoryIds: productForm.categoryIds.length > 0 ? productForm.categoryIds : productForm.categoryId ? [productForm.categoryId] : [],
           mediaAssetId: productForm.mediaAssetId,
         };
 

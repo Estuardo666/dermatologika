@@ -27,6 +27,7 @@ const featuredCategoryItemSchema = z.object({
 const featuredProductItemSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  brand: z.string().min(1).optional(),
   description: z.string().min(1),
   href: z.string().min(1),
   badge: z.string().min(1).optional(),
@@ -81,6 +82,7 @@ const storedProductSelectionSchema = z.object({
     id: z.string().min(1),
     slug: z.string().min(1),
     name: z.string().min(1),
+    brand: z.string().min(1).optional(),
     description: z.string().min(1),
     href: z.string().min(1),
     badge: z.string().nullable().optional(),
@@ -192,6 +194,7 @@ function parseFeaturedProductsItems(value: unknown): FeaturedProductContent[] {
     const baseItem = {
       id: item.id,
       name: item.name,
+      brand: item.brand ?? "Sin marca",
       description: item.description,
       href: item.href,
       price: item.price ?? null,
@@ -215,6 +218,7 @@ function parseFeaturedProductSelections(value: unknown): FeaturedProductContent[
     const baseItem = {
       id: selection.product.slug,
       name: selection.product.name,
+      brand: selection.product.brand ?? "Sin marca",
       description: selection.product.description,
       href: selection.product.href,
       price: selection.product.price,

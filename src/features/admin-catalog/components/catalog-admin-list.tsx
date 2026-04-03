@@ -1,12 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 
 import { AdminBreadcrumbs } from "@/components/layout/admin-breadcrumbs";
+import { SelectionCheckbox } from "@/features/admin-catalog/components/selection-checkbox";
 import { cx } from "@/lib/utils";
 import {
   applyCategoryBulkActionClient,
@@ -63,44 +63,7 @@ function BulkSelectionCheckbox(props: {
   disabled: boolean;
   srLabel: string;
 }) {
-  return (
-    <label className="relative inline-flex h-4 w-4 items-center justify-center">
-      <span className="sr-only">{props.srLabel}</span>
-      <input
-        type="checkbox"
-        checked={props.checked}
-        onChange={props.onChange}
-        disabled={props.disabled}
-        className="peer sr-only"
-      />
-
-      <motion.span
-        aria-hidden="true"
-        initial={false}
-        animate={{
-          scale: props.checked ? 1 : 0.96,
-        }}
-        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        className={cx(
-          "flex h-4 w-4 items-center justify-center rounded-full border shadow-[inset_0_0_0_1px_rgba(0,0,0,0.01)] transition-[background-color,border-color] duration-[180ms] ease-soft peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-border-brand peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-canvas",
-          props.checked
-            ? "border-border-brand bg-brand-primary"
-            : "border-border-default bg-surface-canvas",
-          props.disabled ? "opacity-50" : "cursor-pointer",
-        )}
-      >
-        <motion.span
-          initial={false}
-          animate={{
-            opacity: props.checked ? 1 : 0,
-            scale: props.checked ? 1 : 0.4,
-          }}
-          transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-          className="h-1.5 w-1.5 rounded-full bg-surface-canvas"
-        />
-      </motion.span>
-    </label>
-  );
+  return <SelectionCheckbox {...props} />;
 }
 
 function getBulkActionLabel(action: CatalogBulkAction, processedCount: number, section: "categories" | "products") {
@@ -691,7 +654,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                             </span>
                           </td>
                           <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
-                            {product.categoryName ?? "Sin categoria"}
+                            {product.categoryNames.join(", ") || product.categoryName || "Sin categoria"}
                           </td>
                           <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
                             {product.externalSourceId ? `${product.externalSourceId} · v${product.syncVersion}` : "Local"}

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { AdminBreadcrumbs } from "@/components/layout/admin-breadcrumbs";
 import { MediaAssetFrame } from "@/components/media/media-asset-frame";
 import { ProductBadge } from "@/components/ui/product-badge";
+import { SelectionCheckbox } from "@/features/admin-catalog/components/selection-checkbox";
 import { cx } from "@/lib/utils";
 import { DEFAULT_PRODUCT_BADGE_COLOR, PRODUCT_BADGE_PRESETS } from "@/lib/product-badges";
 import {
@@ -38,6 +39,7 @@ interface ProductAdminFormProps {
 function buildProductForm(
 	product?: AdminCatalogProductItem | null,
 	categories: AdminCatalogEditorData["categories"] = [],
+	brands: AdminCatalogEditorData["brands"] = [],
 ): AdminProductFormData {
 	if (!product) {
 		const defaultCategory = categories.find((category) => category.isActive) ?? categories[0];
@@ -45,12 +47,15 @@ function buildProductForm(
 		return {
 			slug: "",
 			name: "",
+			brand: "Sin marca",
+			brandId: brands[0]?.id ?? "",
 			description: "",
 			href: "",
 			badge: "",
 			badgeColor: "",
 			isActive: true,
 			categoryId: defaultCategory?.id ?? "",
+			categoryIds: defaultCategory ? [defaultCategory.id] : [],
 			mediaAssetId: "",
 		};
 	}
@@ -58,12 +63,15 @@ function buildProductForm(
 	return {
 		slug: product.slug,
 		name: product.name,
+		brand: product.brand,
+		brandId: product.brandId ?? brands[0]?.id ?? "",
 		description: product.description,
 		href: product.href,
 		badge: product.badge ?? "",
 		badgeColor: product.badgeColor ?? (product.badge ? DEFAULT_PRODUCT_BADGE_COLOR : ""),
 		isActive: product.isActive,
 		categoryId: product.categoryId ?? "",
+		categoryIds: product.categoryIds,
 		mediaAssetId: product.mediaAssetId ?? "",
 	};
 }
@@ -160,19 +168,33 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 				updatedAt: "",
 			}));
 	const [formData, setFormData] = useState<AdminProductFormData>(() =>
-		buildProductForm(product, initialData.categories),
+		buildProductForm(product, initialData.categories, initialData.brands),
 	);
 	const [persistedProduct, setPersistedProduct] = useState<AdminCatalogProductItem | null>(product ?? null);
 	const [imageFile, setImageFile] = useState<File | null>(null);
 	const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 	const [fileInputKey, setFileInputKey] = useState(0);
+	const [categoryQuery, setCategoryQuery] = useState("");
 	const [submissionState, setSubmissionState] = useState<SubmissionState>("idle");
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [savedSnapshot, setSavedSnapshot] = useState(() =>
-		JSON.stringify(buildProductForm(product, initialData.categories)),
+		JSON.stringify(buildProductForm(product, initialData.categories, initialData.brands)),
 	);
 	const [savedAt, setSavedAt] = useState<string | null>(product?.updatedAt ?? null);
 	const selectedMedia = initialData.mediaAssets.find((asset) => asset.id === formData.mediaAssetId) ?? null;
+	const selectedBrand = initialData.brands.find((brand) => brand.id === formData.brandId) ?? null;
+	const normalizedCategoryQuery = categoryQuery.trim().toLocaleLowerCase("es");
+	const selectedCategories = formData.categoryIds
+		.map((categoryId) => initialData.categories.find((category) => category.id === categoryId) ?? null)
+		.filter((category): category is AdminCatalogEditorData["categories"][number] => Boolean(category));
+	const filteredCategories = initialData.categories.filter((category) => {
+		if (!normalizedCategoryQuery) {
+			return true;
+		}
+
+		const searchTarget = `${category.name} ${category.slug} ${category.description}`.toLocaleLowerCase("es");
+		return searchTarget.includes(normalizedCategoryQuery);
+	});
 	const previewAsset =
 		buildLocalPreviewAsset({
 			file: imageFile,
@@ -258,6 +280,32 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 		}));
 	}
 
+	function toggleCategorySelection(categoryId: string) {
+		markAsDirty();
+		setFormData((current) => {
+			const isSelected = current.categoryIds.includes(categoryId);
+			const nextCategoryIds = isSelected
+				? current.categoryIds.filter((value) => value !== categoryId)
+				: [...current.categoryIds, categoryId];
+
+			return {
+				...current,
+				categoryIds: nextCategoryIds,
+				categoryId: nextCategoryIds[0] ?? "",
+			};
+		});
+	}
+
+	function updateBrandSelection(brandId: string) {
+		const brand = initialData.brands.find((item) => item.id === brandId) ?? null;
+		markAsDirty();
+		setFormData((current) => ({
+			...current,
+			brandId,
+			brand: brand?.name ?? current.brand,
+		}));
+	}
+
 	function clearImageSelection(removePersistedAsset = false) {
 		markAsDirty();
 		resetPendingImageSelection();
@@ -302,6 +350,9 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 				...formData,
 				slug,
 				href: slug ? buildProductHref(slug) : "",
+				brand: selectedBrand?.name ?? formData.brand,
+				categoryId: formData.categoryIds[0] ?? formData.categoryId,
+				categoryIds: formData.categoryIds,
 				mediaAssetId: formData.mediaAssetId,
 			};
 
@@ -311,7 +362,7 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 
 			if (mode === "edit" && product) {
 				const updated = await updateProductClient(product.id, payload);
-				const nextFormData = buildProductForm(updated, initialData.categories);
+				const nextFormData = buildProductForm(updated, initialData.categories, initialData.brands);
 				setFormData(nextFormData);
 				setPersistedProduct(updated);
 				setSavedSnapshot(JSON.stringify(nextFormData));
@@ -396,6 +447,15 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 					<form id="product-form" onSubmit={handleSubmit} className="space-y-6">
 						<div className="rounded-2xl bg-surface-subtle p-4">
 							<div className="space-y-4">
+								<label className="inline-flex items-center gap-3 text-body-sm text-text-secondary">
+									<SelectionCheckbox
+										checked={formData.isActive}
+										onChange={() => updateField("isActive", !formData.isActive)}
+										srLabel="Producto activo para seleccion publica"
+									/>
+									<span>Producto activo para seleccion publica</span>
+								</label>
+
 								<label className="space-y-2 block">
 									<span className="block text-label-md text-text-primary">Nombre</span>
 									<input value={formData.name} onChange={(event) => updateName(event.target.value)} className={`${adminFieldClassName} rounded-2xl text-section-md font-semibold sm:py-4 sm:text-section-lg`} placeholder="Serum despigmentante" />
@@ -420,22 +480,81 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 							<textarea value={formData.description} onChange={(event) => updateField("description", event.target.value)} rows={6} className={adminFieldClassName} />
 						</label>
 
-						<div className="grid gap-4 md:grid-cols-2">
-							<label className="space-y-2">
-								<span className="block text-label-md text-text-primary">Categoria</span>
-								<select
-									value={formData.categoryId}
-									onChange={(event) => updateField("categoryId", event.target.value)}
+						<label className="space-y-2 block">
+							<div className="flex items-center justify-between gap-3">
+								<span className="block text-label-md text-text-primary">Marca</span>
+								<Link href="/admin/catalog/brands" className="text-body-sm text-text-secondary underline-offset-4 hover:underline">
+									Gestionar marcas
+								</Link>
+							</div>
+							<select value={formData.brandId} onChange={(event) => updateBrandSelection(event.target.value)} className={adminFieldClassName}>
+								<option value="">Selecciona una marca</option>
+								{initialData.brands.map((brand) => (
+									<option key={brand.id} value={brand.id}>
+										{brand.name}
+									</option>
+								))}
+							</select>
+						</label>
+
+						<div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+							<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+								<div className="flex items-center justify-between gap-3">
+									<span className="block text-label-md text-text-primary">Categorias</span>
+									<span className="text-caption uppercase tracking-[0.12em] text-text-muted">La primera queda como principal</span>
+								</div>
+								<input
+									value={categoryQuery}
+									onChange={(event) => setCategoryQuery(event.target.value)}
 									className={adminFieldClassName}
-								>
-									<option value="">Selecciona una categoria</option>
-									{initialData.categories.map((category) => (
-										<option key={category.id} value={category.id}>
-											{category.name}
-										</option>
-									))}
-								</select>
-							</label>
+									placeholder="Busca categorias por nombre, slug o descripcion"
+								/>
+
+								{selectedCategories.length > 0 ? (
+									<div className="flex flex-wrap gap-2">
+										{selectedCategories.map((category, index) => (
+											<button
+												key={category.id}
+												type="button"
+												onClick={() => toggleCategorySelection(category.id)}
+												className="inline-flex items-center gap-2 rounded-full border border-border-soft bg-surface-canvas px-3 py-1.5 text-body-sm text-text-primary transition hover:border-border-brand"
+											>
+												<span>{category.name}</span>
+												{index === 0 ? <span className="text-caption uppercase tracking-[0.12em] text-text-muted">Principal</span> : null}
+											</button>
+										))}
+									</div>
+								) : (
+									<p className="text-body-sm text-text-secondary">Selecciona al menos una categoria para publicar el producto.</p>
+								)}
+
+								<div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+									{filteredCategories.length > 0 ? (
+										filteredCategories.map((category) => {
+											const isSelected = formData.categoryIds.includes(category.id);
+
+											return (
+												<button
+													key={category.id}
+													type="button"
+													onClick={() => toggleCategorySelection(category.id)}
+													className={cx(
+														"flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition",
+														isSelected
+															? "border-border-brand bg-surface-canvas"
+															: "border-border-soft bg-[#f8fbf7] hover:border-border-brand hover:bg-surface-canvas",
+													)}
+												>
+													<SelectionCheckbox checked={isSelected} onChange={() => toggleCategorySelection(category.id)} srLabel={`Seleccionar categoria ${category.name}`} />
+													<span className="min-w-0 flex-1 text-body-md text-text-primary">{category.name}</span>
+												</button>
+											);
+										})
+									) : (
+										<p className="rounded-2xl border border-dashed border-border-soft px-4 py-5 text-body-sm text-text-secondary">No hay categorias que coincidan con la busqueda.</p>
+									)}
+								</div>
+							</div>
 
 							<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
 								<div className="flex items-center justify-between gap-3">
@@ -483,11 +602,6 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 									<p className="text-body-sm text-text-secondary">Selecciona un preset o escribe un badge propio y asígnale color.</p>
 								)}
 							</div>
-
-							<label className="flex items-center gap-3 rounded-2xl border border-border-soft bg-surface-subtle px-4 py-3 text-body-sm text-text-secondary md:self-end">
-								<input type="checkbox" checked={formData.isActive} onChange={(event) => updateField("isActive", event.target.checked)} className="h-4 w-4 rounded border-border-default" />
-								Producto activo para seleccion publica
-							</label>
 						</div>
 
 						<div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
@@ -525,7 +639,8 @@ export function ProductAdminForm({ initialData, mode, product }: ProductAdminFor
 							<p><span className="text-text-primary">Modo:</span> {mode === "create" ? "Creacion" : "Edicion"}</p>
 							<p><span className="text-text-primary">Slug:</span> {formData.slug || "Pendiente"}</p>
 							<p><span className="text-text-primary">Href:</span> {formData.href || "Pendiente"}</p>
-							<p><span className="text-text-primary">Categoria:</span> {initialData.categories.find((category) => category.id === formData.categoryId)?.name || "Sin categoria"}</p>
+							<p><span className="text-text-primary">Marca:</span> {formData.brand || "Pendiente"}</p>
+							<p><span className="text-text-primary">Categorias:</span> {selectedCategories.map((category) => category.name).join(", ") || "Sin categoria"}</p>
 							<p><span className="text-text-primary">Estado:</span> {formData.isActive ? "Activo" : "Inactivo"}</p>
 							<p><span className="text-text-primary">Badge:</span> {formData.badge || "Sin badge"}</p>
 							{formData.badge ? (

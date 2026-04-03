@@ -57,6 +57,8 @@ export const adminCategoryFormSchema = z.object({
 export const adminProductFormSchema = z.object({
   slug: optionalSlugSchema,
   name: z.string().trim().min(1, "Name is required"),
+  brand: z.string().trim().min(1, "Brand is required"),
+  brandId: z.string().trim().min(1, "Brand is required"),
   description: z.string().trim().min(1, "Description is required"),
   href: optionalHrefSchema,
   badge: z.string().trim().default(""),
@@ -65,7 +67,8 @@ export const adminProductFormSchema = z.object({
   discountPrice: optionalCurrencyAmountSchema.default(null),
   stock: stockSchema.default(0),
   isActive: z.boolean(),
-  categoryId: z.string().trim().min(1, "Category is required"),
+  categoryId: z.string().trim().default(""),
+  categoryIds: z.array(z.string().trim().min(1, "Category is required")).default([]),
   mediaAssetId: mediaAssetIdSchema,
 }).superRefine((value, context) => {
   if (value.discountPrice !== null && value.discountPrice > value.price) {
@@ -73,6 +76,19 @@ export const adminProductFormSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["discountPrice"],
       message: "Discount price cannot be greater than price",
+    });
+  }
+
+  const normalizedCategoryIds = new Set(value.categoryIds.map((categoryId) => categoryId.trim()).filter(Boolean));
+  if (value.categoryId.trim()) {
+    normalizedCategoryIds.add(value.categoryId.trim());
+  }
+
+  if (normalizedCategoryIds.size === 0) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["categoryIds"],
+      message: "Select at least one category",
     });
   }
 });
@@ -89,7 +105,13 @@ export const adminProductBadgePresetFormSchema = z.object({
   sortOrder: z.coerce.number().int("Sort order must be an integer").min(0, "Sort order cannot be negative").default(0),
 });
 
+export const adminBrandFormSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  mediaAssetId: mediaAssetIdSchema,
+});
+
 export type AdminCategoryFormInput = z.infer<typeof adminCategoryFormSchema>;
 export type AdminProductFormInput = z.infer<typeof adminProductFormSchema>;
 export type AdminCatalogBulkActionInput = z.infer<typeof adminCatalogBulkActionSchema>;
 export type AdminProductBadgePresetFormInput = z.infer<typeof adminProductBadgePresetFormSchema>;
+export type AdminBrandFormInput = z.infer<typeof adminBrandFormSchema>;

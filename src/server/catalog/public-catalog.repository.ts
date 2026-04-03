@@ -19,10 +19,23 @@ function buildPublicProductVisibilityFilter(): Prisma.ProductWhereInput {
   return {
     isActive: true,
     OR: [
-      { categoryId: null },
+      {
+        categoryAssignments: {
+          none: {},
+        },
+      },
       {
         category: {
           isActive: true,
+        },
+      },
+      {
+        categoryAssignments: {
+          some: {
+            category: {
+              isActive: true,
+            },
+          },
         },
       },
     ],
@@ -43,6 +56,7 @@ function buildPublicProductSearchFilter(query: string): Prisma.ProductWhereInput
   return {
     OR: [
       { name: { contains: query, mode: "insensitive" } },
+      { brand: { contains: query, mode: "insensitive" } },
       { slug: { contains: query, mode: "insensitive" } },
       { description: { contains: query, mode: "insensitive" } },
       { badge: { contains: query, mode: "insensitive" } },
@@ -52,6 +66,18 @@ function buildPublicProductSearchFilter(query: string): Prisma.ProductWhereInput
           name: {
             contains: query,
             mode: "insensitive",
+          },
+        },
+      },
+      {
+        categoryAssignments: {
+          some: {
+            category: {
+              name: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
           },
         },
       },
@@ -65,9 +91,13 @@ function buildPublicProductCategoryFilter(categorySlug: string): Prisma.ProductW
   }
 
   return {
-    category: {
-      slug: categorySlug,
-      isActive: true,
+    categoryAssignments: {
+      some: {
+        category: {
+          slug: categorySlug,
+          isActive: true,
+        },
+      },
     },
   };
 }
@@ -121,6 +151,13 @@ const publicCategoryInclude = {
           isActive: true,
         },
       },
+      productAssignments: {
+        where: {
+          product: {
+            isActive: true,
+          },
+        },
+      },
     },
   },
 } satisfies Prisma.CategoryInclude;
@@ -133,6 +170,20 @@ const publicProductInclude = {
       name: true,
       href: true,
     },
+  },
+  categoryAssignments: {
+    select: {
+      position: true,
+      category: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          href: true,
+        },
+      },
+    },
+    orderBy: [{ position: "asc" }, { category: { name: "asc" } }],
   },
   mediaAsset: {
     select: {
@@ -168,9 +219,11 @@ export async function listPublicCategoryOptions() {
       href: true,
       _count: {
         select: {
-          products: {
+          productAssignments: {
             where: {
-              isActive: true,
+              product: {
+                isActive: true,
+              },
             },
           },
         },
@@ -229,9 +282,9 @@ export async function findPublicProductRecordBySlug(slug: string) {
 
 export async function listRelatedPublicProductRecords(input: {
   productId: string;
-  categoryId: string | null;
+  categoryIds: string[];
 }) {
-  if (!input.categoryId) {
+  if (input.categoryIds.length === 0) {
     return [];
   }
 
@@ -241,7 +294,25 @@ export async function listRelatedPublicProductRecords(input: {
       id: {
         not: input.productId,
       },
-      categoryId: input.categoryId,
+      OR: [
+        {
+          categoryId: {
+            in: input.categoryIds,
+          },
+        },
+        {
+          categoryAssignments: {
+            some: {
+              categoryId: {
+                in: input.categoryIds,
+              },
+              category: {
+                isActive: true,
+              },
+            },
+          },
+        },
+      ],
     },
     include: publicProductInclude,
     orderBy: [{ updatedAt: "desc" }, { name: "asc" }],

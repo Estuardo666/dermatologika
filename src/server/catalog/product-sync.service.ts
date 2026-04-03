@@ -342,6 +342,7 @@ export class ProductSyncService {
   ) {
     return {
       name: externalProduct.name,
+      brand: externalProduct.brand || existingLocal?.brand || "Sin marca",
       description: externalProduct.description || existingLocal?.description || "",
       slug: externalProduct.slug,
       href: `/product/${externalProduct.slug}`, // Or derive from existing

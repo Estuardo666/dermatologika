@@ -16,6 +16,7 @@ export interface ExternalProduct {
 
   // Human-readable fields
   name: string;
+  brand?: string;
   description?: string;
 
   // For generating local slug and URL (must be URL-safe)

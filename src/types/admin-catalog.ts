@@ -23,6 +23,8 @@ export interface AdminCategoryFormData {
 export interface AdminProductFormData {
   slug: string;
   name: string;
+  brand: string;
+  brandId: string;
   description: string;
   href: string;
   badge: string;
@@ -32,6 +34,7 @@ export interface AdminProductFormData {
   stock?: number;
   isActive: boolean;
   categoryId: string;
+  categoryIds: string[];
   mediaAssetId: string;
 }
 
@@ -40,6 +43,11 @@ export interface AdminProductBadgePresetFormData {
   color: string;
   isActive: boolean;
   sortOrder: number;
+}
+
+export interface AdminBrandFormData {
+  name: string;
+  mediaAssetId: string;
 }
 
 export interface AdminCatalogCategoryItem {
@@ -60,6 +68,8 @@ export interface AdminCatalogProductItem {
   id: string;
   slug: string;
   name: string;
+  brand: string;
+  brandId: string | null;
   description: string;
   href: string;
   badge: string | null;
@@ -70,6 +80,8 @@ export interface AdminCatalogProductItem {
   isActive: boolean;
   categoryId: string | null;
   categoryName: string | null;
+  categoryIds: string[];
+  categoryNames: string[];
   mediaAssetId: string | null;
   mediaAssetPublicUrl: string | null;
   mediaAssetAltText: string;
@@ -91,9 +103,21 @@ export interface AdminProductBadgePresetItem {
   updatedAt: string;
 }
 
+export interface AdminBrandItem {
+  id: string;
+  name: string;
+  mediaAssetId: string | null;
+  mediaAssetPublicUrl: string | null;
+  mediaAssetAltText: string;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminCatalogEditorData {
   categories: AdminCatalogCategoryItem[];
   products: AdminCatalogProductItem[];
+  brands: AdminBrandItem[];
   mediaAssets: AdminMediaAssetSummary[];
   badgePresets: AdminProductBadgePresetItem[];
 }
@@ -139,6 +163,18 @@ export interface AdminProductLibraryData {
   filters: AdminCatalogListFilters;
   sorting: AdminCatalogSorting<ProductCatalogSortField>;
   categoryOptions: AdminCatalogCategoryFilterOption[];
+}
+
+export interface AdminBrandRouteResponse {
+  success: boolean;
+  data?: {
+    brand: AdminBrandItem;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+  timestamp: string;
 }
 
 export interface AdminCatalogRouteResponse {

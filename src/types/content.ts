@@ -52,6 +52,7 @@ export interface FeaturedCategoryContent {
 export interface FeaturedProductContent {
   id: string;
   name: string;
+  brand: string;
   description: string;
   href: string;
   badge?: string;

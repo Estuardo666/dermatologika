@@ -63,12 +63,22 @@ function buildProductSearchFilter(query: string): Prisma.ProductWhereInput | und
   return {
     OR: [
       { name: { contains: query, mode: "insensitive" } },
+      { brand: { contains: query, mode: "insensitive" } },
       { slug: { contains: query, mode: "insensitive" } },
       { description: { contains: query, mode: "insensitive" } },
       { href: { contains: query, mode: "insensitive" } },
       { badge: { contains: query, mode: "insensitive" } },
       { badgeColor: { contains: query, mode: "insensitive" } },
       { externalSourceId: { contains: query, mode: "insensitive" } },
+      {
+        categoryAssignments: {
+          some: {
+            category: {
+              name: { contains: query, mode: "insensitive" },
+            },
+          },
+        },
+      },
     ],
   };
 }
@@ -79,9 +89,55 @@ function buildProductCategoryFilter(categoryId: string): Prisma.ProductWhereInpu
   }
 
   return {
-    categoryId,
+    OR: [
+      { categoryId },
+      {
+        categoryAssignments: {
+          some: {
+            categoryId,
+          },
+        },
+      },
+    ],
   };
 }
+
+const adminProductCategorySelect = {
+  id: true,
+  slug: true,
+  name: true,
+  href: true,
+} satisfies Prisma.CategorySelect;
+
+const adminProductInclude = {
+  brandRecord: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  categoryAssignments: {
+    select: {
+      position: true,
+      category: {
+        select: adminProductCategorySelect,
+      },
+    },
+    orderBy: [{ position: "asc" }, { category: { name: "asc" } }],
+  },
+  mediaAsset: {
+    select: {
+      publicUrl: true,
+      altText: true,
+    },
+  },
+} satisfies Prisma.ProductInclude;
 
 function combineWhere<T extends Prisma.CategoryWhereInput | Prisma.ProductWhereInput>(
   ...conditions: Array<T | undefined>
@@ -105,6 +161,25 @@ export async function listAdminCatalogMediaAssetRecords() {
     orderBy: {
       createdAt: "desc",
     },
+  });
+}
+
+export async function listAdminBrandRecords() {
+  return prisma.brand.findMany({
+    include: {
+      mediaAsset: {
+        select: {
+          publicUrl: true,
+          altText: true,
+        },
+      },
+      _count: {
+        select: {
+          products: true,
+        },
+      },
+    },
+    orderBy: [{ name: "asc" }],
   });
 }
 
@@ -181,20 +256,7 @@ export async function listAdminCategoryRecords() {
 
 export async function listAdminProductRecords() {
   return prisma.product.findMany({
-    include: {
-      category: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      mediaAsset: {
-        select: {
-          publicUrl: true,
-          altText: true,
-        },
-      },
-    },
+    include: adminProductInclude,
     orderBy: [
       {
         isActive: "desc",
@@ -228,24 +290,34 @@ export async function findAdminCategoryRecord(id: string) {
   });
 }
 
-export async function findAdminProductRecord(id: string) {
-  return prisma.product.findUnique({
+export async function findAdminBrandRecord(id: string) {
+  return prisma.brand.findUnique({
     where: {
       id,
     },
     include: {
-      category: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
       mediaAsset: {
         select: {
           publicUrl: true,
           altText: true,
         },
       },
+      _count: {
+        select: {
+          products: true,
+        },
+      },
+    },
+  });
+}
+
+export async function findAdminProductRecord(id: string) {
+  return prisma.product.findUnique({
+    where: {
+      id,
+    },
+    include: {
+      ...adminProductInclude,
       homeSelections: {
         select: {
           id: true,
@@ -310,20 +382,7 @@ export async function listAdminProductLibraryRecords(query: AdminProductListQuer
     filteredCountQuery,
     prisma.product.findMany({
       ...(where ? { where } : {}),
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        mediaAsset: {
-          select: {
-            publicUrl: true,
-            altText: true,
-          },
-        },
-      },
+      include: adminProductInclude,
       orderBy,
       skip,
       take: query.pageSize,
@@ -359,6 +418,25 @@ export async function findConflictingCategoryRecord(input: {
       name: true,
       slug: true,
       href: true,
+    },
+  });
+}
+
+export async function findConflictingBrandRecord(input: {
+  excludeId?: string;
+  name: string;
+}) {
+  return prisma.brand.findFirst({
+    where: {
+      ...(input.excludeId ? { id: { not: input.excludeId } } : {}),
+      name: {
+        equals: input.name,
+        mode: "insensitive",
+      },
+    },
+    select: {
+      id: true,
+      name: true,
     },
   });
 }

@@ -4,6 +4,7 @@ import { adminProductFormSchema } from "@/features/admin-catalog/schemas/admin-c
 import { normalizeBadgeColor } from "@/lib/product-badges";
 import { resolveProductIdentity } from "@/lib/catalog-slugs";
 import {
+  findAdminBrandRecord,
   findAdminProductRecord,
   findConflictingProductRecord,
 } from "@/server/catalog/admin-catalog.repository";
@@ -15,6 +16,10 @@ import { CatalogBulkActionError, CatalogConflictError } from "./admin-catalog.er
 function normalizeMediaAssetId(mediaAssetId: string): string | null {
   const normalizedValue = mediaAssetId.trim();
   return normalizedValue.length > 0 ? normalizedValue : null;
+}
+
+function normalizeCategoryIds(categoryId: string, categoryIds: string[]): string[] {
+  return [...new Set([categoryId, ...categoryIds].map((value) => value.trim()).filter(Boolean))];
 }
 
 function normalizeOptionalString(value: string): string | null {
@@ -64,6 +69,36 @@ async function assertCategoryExists(categoryId: string): Promise<void> {
   }
 }
 
+async function assertCategoriesExist(categoryIds: string[]): Promise<void> {
+  const uniqueCategoryIds = [...new Set(categoryIds)];
+  const existingCategories = await prisma.category.findMany({
+    where: {
+      id: {
+        in: uniqueCategoryIds,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (existingCategories.length !== uniqueCategoryIds.length) {
+    throw new Error("One or more selected categories do not exist.");
+  }
+}
+
+async function assertBrandExists(brandId: string): Promise<{ id: string; name: string }> {
+  const brand = await findAdminBrandRecord(brandId);
+  if (!brand) {
+    throw new Error("The selected brand does not exist.");
+  }
+
+  return {
+    id: brand.id,
+    name: brand.name,
+  };
+}
+
 function equalsIgnoreCase(left: string, right: string): boolean {
   return left.trim().toLocaleLowerCase("es") === right.trim().toLocaleLowerCase("es");
 }
@@ -96,7 +131,10 @@ export async function createProduct(input: AdminProductFormData) {
   const parsedInput = adminProductFormSchema.parse(input);
   const identity = resolveProductIdentity(parsedInput);
   const mediaAssetId = normalizeMediaAssetId(parsedInput.mediaAssetId);
-  await assertCategoryExists(parsedInput.categoryId);
+  const categoryIds = normalizeCategoryIds(parsedInput.categoryId, parsedInput.categoryIds);
+  const primaryCategoryId = categoryIds[0] ?? "";
+  const brand = await assertBrandExists(parsedInput.brandId);
+  await assertCategoriesExist(categoryIds);
   await assertMediaAssetExists(mediaAssetId);
   await assertProductBusinessUniqueness({
     name: parsedInput.name,
@@ -108,6 +146,8 @@ export async function createProduct(input: AdminProductFormData) {
     data: {
       slug: identity.slug,
       name: parsedInput.name,
+      brand: brand.name,
+      brandId: brand.id,
       description: parsedInput.description,
       href: identity.href,
       badge: normalizeOptionalString(parsedInput.badge),
@@ -116,8 +156,45 @@ export async function createProduct(input: AdminProductFormData) {
       discountPrice: parsedInput.discountPrice,
       stock: parsedInput.stock,
       isActive: parsedInput.isActive,
-      categoryId: parsedInput.categoryId,
+      categoryId: primaryCategoryId,
+      categoryAssignments: {
+        create: categoryIds.map((categoryId, index) => ({
+          categoryId,
+          position: index,
+        })),
+      },
       mediaAssetId,
+    },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      brandRecord: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      categoryAssignments: {
+        select: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [{ position: "asc" }, { category: { name: "asc" } }],
+      },
+      mediaAsset: {
+        select: {
+          publicUrl: true,
+          altText: true,
+        },
+      },
     },
   });
 }
@@ -131,7 +208,10 @@ export async function updateProduct(id: string, input: AdminProductFormData) {
   const parsedInput = adminProductFormSchema.parse(input);
   const identity = resolveProductIdentity(parsedInput);
   const mediaAssetId = normalizeMediaAssetId(parsedInput.mediaAssetId);
-  await assertCategoryExists(parsedInput.categoryId);
+  const categoryIds = normalizeCategoryIds(parsedInput.categoryId, parsedInput.categoryIds);
+  const primaryCategoryId = categoryIds[0] ?? null;
+  const brand = await assertBrandExists(parsedInput.brandId);
+  await assertCategoriesExist(categoryIds);
   await assertMediaAssetExists(mediaAssetId);
   await assertProductBusinessUniqueness({
     excludeId: id,
@@ -147,6 +227,8 @@ export async function updateProduct(id: string, input: AdminProductFormData) {
     data: {
       slug: identity.slug,
       name: parsedInput.name,
+      brand: brand.name,
+      brandId: brand.id,
       description: parsedInput.description,
       href: identity.href,
       badge: normalizeOptionalString(parsedInput.badge),
@@ -155,8 +237,46 @@ export async function updateProduct(id: string, input: AdminProductFormData) {
       discountPrice: parsedInput.discountPrice,
       stock: parsedInput.stock,
       isActive: parsedInput.isActive,
-      categoryId: parsedInput.categoryId,
+      categoryId: primaryCategoryId,
+      categoryAssignments: {
+        deleteMany: {},
+        create: categoryIds.map((categoryId, index) => ({
+          categoryId,
+          position: index,
+        })),
+      },
       mediaAssetId,
+    },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      brandRecord: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      categoryAssignments: {
+        select: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [{ position: "asc" }, { category: { name: "asc" } }],
+      },
+      mediaAsset: {
+        select: {
+          publicUrl: true,
+          altText: true,
+        },
+      },
     },
   });
 }

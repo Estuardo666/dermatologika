@@ -2,6 +2,7 @@ import "server-only";
 
 import type { MediaAsset } from "@/types/media";
 import type {
+  PublicCatalogCategoryReference,
   PublicCatalogCategoryOption,
   PublicCatalogCategorySummary,
   PublicCatalogPagination,
@@ -104,7 +105,7 @@ function mapCategorySummary(record: {
     durationSeconds: number | null;
   } | null;
   _count: {
-    products: number;
+    productAssignments: number;
   };
 }): PublicCatalogCategorySummary {
   return {
@@ -114,7 +115,7 @@ function mapCategorySummary(record: {
     description: record.description,
     href: record.href,
     media: mapMediaAsset(record.mediaAsset),
-    productCount: record._count.products,
+    productCount: record._count.productAssignments,
   };
 }
 
@@ -124,7 +125,7 @@ function mapCategoryOption(record: {
   name: string;
   href: string;
   _count: {
-    products: number;
+    productAssignments: number;
   };
 }): PublicCatalogCategoryOption {
   return {
@@ -132,14 +133,35 @@ function mapCategoryOption(record: {
     slug: record.slug,
     name: record.name,
     href: record.href,
-    productCount: record._count.products,
+    productCount: record._count.productAssignments,
   };
+}
+
+function dedupeCategoryReferences(
+  categories: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    href: string;
+  }>,
+): PublicCatalogCategoryReference[] {
+  const seen = new Set<string>();
+
+  return categories.filter((category) => {
+    if (seen.has(category.id)) {
+      return false;
+    }
+
+    seen.add(category.id);
+    return true;
+  });
 }
 
 function mapProductSummary(record: {
   id: string;
   slug: string;
   name: string;
+  brand: string;
   description: string;
   href: string;
   price: number | DecimalLike;
@@ -154,6 +176,14 @@ function mapProductSummary(record: {
     name: string;
     href: string;
   } | null;
+  categoryAssignments?: Array<{
+    category: {
+      id: string;
+      slug: string;
+      name: string;
+      href: string;
+    };
+  }>;
   mediaAsset?: {
     id: string;
     kind: "image" | "video";
@@ -167,24 +197,32 @@ function mapProductSummary(record: {
     durationSeconds: number | null;
   } | null;
 }): PublicCatalogProductSummary {
+  const categories = dedupeCategoryReferences([
+    ...(record.category
+      ? [
+          {
+            id: record.category.id,
+            slug: record.category.slug,
+            name: record.category.name,
+            href: record.category.href,
+          },
+        ]
+      : []),
+    ...((record.categoryAssignments ?? []).map((assignment) => assignment.category)),
+  ]);
   const baseItem = {
     id: record.id,
     slug: record.slug,
     name: record.name,
+    brand: record.brand,
     description: record.description,
     href: record.href,
     price: toNumberValue(record.price),
     discountPrice: record.discountPrice === null ? null : toNumberValue(record.discountPrice),
     stock: record.stock,
     media: mapMediaAsset(record.mediaAsset),
-    category: record.category
-      ? {
-          id: record.category.id,
-          slug: record.category.slug,
-          name: record.category.name,
-          href: record.category.href,
-        }
-      : null,
+    category: categories[0] ?? null,
+    categories,
   };
 
   return record.badge
@@ -289,7 +327,7 @@ export async function getPublicProductDetailData(
 
   const relatedProducts = await listRelatedPublicProductRecords({
     productId: product.id,
-    categoryId: product.categoryId,
+    categoryIds: product.categoryAssignments.map((assignment) => assignment.category.id),
   });
 
   return {

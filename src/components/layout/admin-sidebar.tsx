@@ -46,6 +46,11 @@ const catalogNavigation: ReadonlyArray<NavigationItem> = [
     icon: ProductsIcon,
   },
   {
+    href: "/admin/catalog/brands",
+    label: "Marcas",
+    icon: BrandIcon,
+  },
+  {
     href: "/admin/catalog/badges",
     label: "Badges",
     icon: TagIcon,
@@ -650,6 +655,17 @@ function ProductsIcon(props: { className?: string }) {
       <path d="M12 4L19 8V16L12 20L5 16V8L12 4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       <path d="M5 8L12 12L19 8" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       <path d="M12 12V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BrandIcon(props: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={props.className}>
+      <path d="M5 19V8.8C5 7.81 5.81 7 6.8 7H17.2C18.19 7 19 7.81 19 8.8V19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 7V5.6C9 4.72 9.72 4 10.6 4H13.4C14.28 4 15 4.72 15 5.6V7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8.5 12H15.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M8.5 16H13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }

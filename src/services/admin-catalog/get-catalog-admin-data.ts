@@ -2,6 +2,7 @@ import "server-only";
 
 import type { AdminMediaAssetSummary } from "@/types/admin-home-content";
 import type {
+  AdminBrandItem,
   AdminCatalogCategoryFilterOption,
   AdminCategoryLibraryData,
   AdminCatalogCategoryItem,
@@ -20,6 +21,7 @@ import {
   listAdminCatalogMediaAssetRecords,
   listAdminCategoryLibraryRecords,
   listAdminCategoryRecords,
+  listAdminBrandRecords,
   listAdminProductBadgePresetRecords,
   listAdminProductLibraryRecords,
   listAdminProductRecords,
@@ -182,10 +184,38 @@ export function mapAdminCategoryItem(record: {
   };
 }
 
+export function mapAdminBrandItem(record: {
+  id: string;
+  name: string;
+  mediaAssetId: string | null;
+  mediaAsset?: {
+    publicUrl: string | null;
+    altText: string | null;
+  } | null;
+  _count: {
+    products: number;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}): AdminBrandItem {
+  return {
+    id: record.id,
+    name: record.name,
+    mediaAssetId: record.mediaAssetId,
+    mediaAssetPublicUrl: record.mediaAsset?.publicUrl ?? null,
+    mediaAssetAltText: record.mediaAsset?.altText ?? "",
+    productCount: record._count.products,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
 export function mapAdminProductItem(record: {
   id: string;
   slug: string;
   name: string;
+  brand: string;
+  brandId: string | null;
   description: string;
   href: string;
   badge: string | null;
@@ -196,6 +226,16 @@ export function mapAdminProductItem(record: {
   isActive: boolean;
   categoryId: string | null;
   category?: {
+    id: string;
+    name: string;
+  } | null;
+  categoryAssignments?: Array<{
+    category: {
+      id: string;
+      name: string;
+    };
+  }>;
+  brandRecord?: {
     id: string;
     name: string;
   } | null;
@@ -211,10 +251,17 @@ export function mapAdminProductItem(record: {
   createdAt: Date;
   updatedAt: Date;
 }): AdminCatalogProductItem {
+  const categoryPairs = [
+    ...(record.category ? [{ id: record.category.id, name: record.category.name }] : []),
+    ...((record.categoryAssignments ?? []).map((assignment) => assignment.category)),
+  ].filter((category, index, categories) => categories.findIndex((item) => item.id === category.id) === index);
+
   return {
     id: record.id,
     slug: record.slug,
     name: record.name,
+    brand: record.brand,
+    brandId: record.brandRecord?.id ?? record.brandId,
     description: record.description,
     href: record.href,
     badge: record.badge,
@@ -224,7 +271,9 @@ export function mapAdminProductItem(record: {
     stock: record.stock,
     isActive: record.isActive,
     categoryId: record.categoryId,
-    categoryName: record.category?.name ?? null,
+    categoryName: categoryPairs[0]?.name ?? null,
+    categoryIds: categoryPairs.map((category) => category.id),
+    categoryNames: categoryPairs.map((category) => category.name),
     mediaAssetId: record.mediaAssetId,
     mediaAssetPublicUrl: record.mediaAsset?.publicUrl ?? null,
     mediaAssetAltText: record.mediaAsset?.altText ?? "",
@@ -258,9 +307,10 @@ export function mapAdminProductBadgePresetItem(record: {
 }
 
 export async function getCatalogAdminData(): Promise<AdminCatalogEditorData> {
-  const [categories, products, mediaAssets, badgePresets] = await Promise.all([
+  const [categories, products, brands, mediaAssets, badgePresets] = await Promise.all([
     listAdminCategoryRecords(),
     listAdminProductRecords(),
+    listAdminBrandRecords(),
     listAdminCatalogMediaAssetRecords(),
     listAdminProductBadgePresetRecords(),
   ]);
@@ -268,6 +318,7 @@ export async function getCatalogAdminData(): Promise<AdminCatalogEditorData> {
   return {
     categories: categories.map(mapAdminCategoryItem),
     products: products.map(mapAdminProductItem),
+    brands: brands.map(mapAdminBrandItem),
     mediaAssets: mediaAssets.map(mapAdminMediaAssetSummary),
     badgePresets: badgePresets.map(mapAdminProductBadgePresetItem),
   };

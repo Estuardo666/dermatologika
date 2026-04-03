@@ -115,6 +115,7 @@ export const fallbackHomePageContent: HomePageContent = {
       {
         id: "product-clarity",
         name: "Rutina de claridad diaria",
+        brand: "Dermatologika",
         description: "Ejemplo de ficha editorial para una selección destacada con prioridad de exposición.",
         href: "#contact-cta",
         badge: "Destacado",
@@ -131,6 +132,7 @@ export const fallbackHomePageContent: HomePageContent = {
       {
         id: "product-balance",
         name: "Balance hidratante",
+        brand: "Dermatologika",
         description: "Preparado para renderizar imagen principal, texto breve y etiqueta comercial desde backend.",
         href: "#contact-cta",
         badge: "Más consultado",
@@ -147,6 +149,7 @@ export const fallbackHomePageContent: HomePageContent = {
       {
         id: "product-renewal",
         name: "Renovación nocturna",
+        brand: "Dermatologika",
         description: "Contrato listo para sincronizar merchandising, badges y media administrable.",
         href: "#contact-cta",
         badge: "Edición curada",
@@ -234,6 +237,7 @@ export const fallbackHomePageContent: HomePageContent = {
       {
         id: "routine-recovery",
         name: "Recuperación y confort",
+        brand: "Dermatologika",
         description: "Una segunda shelf puede combinar recuperación, calma y continuidad dentro del mismo contrato visual.",
         href: "#contact-cta",
         badge: "Rutina guiada",
@@ -250,6 +254,7 @@ export const fallbackHomePageContent: HomePageContent = {
       {
         id: "routine-defense",
         name: "Defensa diaria",
+        brand: "Dermatologika",
         description: "Preparado para renderizar cards de continuidad, packs o sugerencias por franja de uso.",
         href: "#contact-cta",
         badge: "Reposición",
@@ -266,6 +271,7 @@ export const fallbackHomePageContent: HomePageContent = {
       {
         id: "routine-night",
         name: "Soporte nocturno",
+        brand: "Dermatologika",
         description: "El mismo módulo puede conectarse después a recomendaciones dinámicas o catálogos reales.",
         href: "#contact-cta",
         badge: "Noche",

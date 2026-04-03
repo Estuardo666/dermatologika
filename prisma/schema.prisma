@@ -46,6 +46,7 @@ model MediaAsset {
   tertiaryHeroHomePages HomePageContent[] @relation("HomeTertiaryHeroMedia")
   categoryCards         Category[]        @relation("CategoryMediaAsset")
   productCards          Product[]         @relation("ProductMediaAsset")
+  brandLogos            Brand[]           @relation("BrandLogoMediaAsset")
 
   @@index([kind])
   @@index([createdAt])
@@ -63,6 +64,7 @@ model Category {
   updatedAt       DateTime               @updatedAt
   mediaAsset      MediaAsset?            @relation("CategoryMediaAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
   products        Product[]
+  productAssignments ProductCategoryAssignment[]
   homeSelections  HomeFeaturedCategory[]
 
   @@index([isActive])
@@ -74,6 +76,8 @@ model Product {
   id                 String                @id @default(cuid())
   slug               String                @unique
   name               String
+  brand              String                @default("Sin marca")
+  brandId            String?
   description        String
   href               String
   badge              String?
@@ -94,7 +98,9 @@ model Product {
   
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
+  brandRecord        Brand?                @relation(fields: [brandId], references: [id], onDelete: SetNull)
   category           Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryAssignments ProductCategoryAssignment[]
   mediaAsset         MediaAsset?           @relation("ProductMediaAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
   homeSelections     HomeFeaturedProduct[]
 
@@ -105,6 +111,33 @@ model Product {
   @@index([externalId])
   @@index([externalSourceId])
   @@index([lastSyncedAt])
+  @@index([brandId])
+}
+
+model Brand {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  mediaAssetId String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  mediaAsset  MediaAsset? @relation("BrandLogoMediaAsset", fields: [mediaAssetId], references: [id], onDelete: SetNull)
+  products    Product[]
+
+  @@index([mediaAssetId])
+  @@index([createdAt])
+}
+
+model ProductCategoryAssignment {
+  productId   String
+  categoryId  String
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+  @@index([productId, position])
 }
 
 model ProductBadgePreset {

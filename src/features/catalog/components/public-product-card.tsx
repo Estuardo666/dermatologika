@@ -8,6 +8,7 @@ interface PublicProductCardProps {
   product: {
     id: string;
     name: string;
+    brand: string;
     href: string;
     price: number | null;
     discountPrice: number | null;
@@ -93,6 +94,9 @@ export function PublicProductCard({ product }: PublicProductCardProps) {
         <h2 className="text-[1.04rem] leading-tight text-text-primary line-clamp-3">
           {product.name}
         </h2>
+        <p className="mt-1 text-body-sm font-normal text-text-secondary">
+          {product.brand}
+        </p>
 
         <div className="mt-auto pt-4">
           <div className="flex min-h-11 items-center justify-between gap-2 rounded-md bg-[#2a2a2a] px-3 py-2 text-white transition-[background-color] duration-200 ease-soft group-hover:bg-[#1f1f1f] sm:gap-3 sm:px-4">

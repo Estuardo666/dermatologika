@@ -125,6 +125,9 @@ export class GenericRestApiAdapter implements IExternalProductAdapter {
           slug: item.slug || this.generateSlug(item.name || item.title),
         };
 
+        if (item.brand || item.marca || item.manufacturer || item.vendor || item.brandName) {
+          product.brand = item.brand || item.marca || item.manufacturer || item.vendor || item.brandName;
+        }
         if (item.description) product.description = item.description;
         if (item.category) product.category = item.category;
         if (item.price) {
@@ -192,6 +195,9 @@ export class GenericRestApiAdapter implements IExternalProductAdapter {
       slug: item.slug || this.generateSlug(item.name || item.title),
     };
 
+    if (item.brand || item.marca || item.manufacturer || item.vendor || item.brandName) {
+      product.brand = item.brand || item.marca || item.manufacturer || item.vendor || item.brandName;
+    }
     if (item.description) product.description = item.description;
     if (item.category) product.category = item.category;
     if (item.price) {

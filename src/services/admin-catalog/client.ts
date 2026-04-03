@@ -7,6 +7,8 @@ import type {
   AdminCatalogRouteResponse,
   AdminCategoryFormData,
   AdminCategoryRouteResponse,
+  AdminBrandFormData,
+  AdminBrandRouteResponse,
   AdminDeleteRouteResponse,
   AdminProductBadgePresetFormData,
   AdminProductBadgePresetRouteResponse,
@@ -102,6 +104,56 @@ export async function createProductClient(input: AdminProductFormData) {
   }
 
   return body.data.product;
+}
+
+export async function createBrandClient(input: AdminBrandFormData) {
+  const response = await fetch("/api/admin/catalog/brands", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+
+  const body = await parseJsonResponse<AdminBrandRouteResponse>(response);
+  if (!response.ok || !body.success || !body.data) {
+    throw new Error(body.error?.message ?? "Failed to create brand.");
+  }
+
+  return body.data.brand;
+}
+
+export async function updateBrandClient(id: string, input: AdminBrandFormData) {
+  const response = await fetch(`/api/admin/catalog/brands/${id}`, {
+    method: "PUT",
+    headers: {
+      "content-type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+
+  const body = await parseJsonResponse<AdminBrandRouteResponse>(response);
+  if (!response.ok || !body.success || !body.data) {
+    throw new Error(body.error?.message ?? "Failed to update brand.");
+  }
+
+  return body.data.brand;
+}
+
+export async function deleteBrandClient(id: string) {
+  const response = await fetch(`/api/admin/catalog/brands/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const body = await parseJsonResponse<AdminDeleteRouteResponse>(response);
+  if (!response.ok || !body.success || !body.data) {
+    throw new Error(body.error?.message ?? "Failed to delete brand.");
+  }
+
+  return body.data.deletedId;
 }
 
 export async function updateProductClient(id: string, input: AdminProductFormData) {

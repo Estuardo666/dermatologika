@@ -54,14 +54,14 @@ export function resolveProductIdentity(input: { name: string; slug?: string; hre
 }
 
 export function buildCatalogMediaStorageKey(
-  entityType: "categories" | "products",
+  entityType: "categories" | "products" | "brands",
   slug: string,
   fileName: string,
   timestamp = Date.now(),
 ): string {
   const extensionMatch = /\.[^.]+$/.exec(fileName);
   const extension = extensionMatch ? extensionMatch[0].toLowerCase() : "";
-  const folder = entityType === "categories" ? "Categories" : "Products";
+  const folder = entityType === "categories" ? "Categories" : entityType === "brands" ? "Brands" : "Products";
 
   return `Dermatologika/Catalog/${folder}/${slug}-${timestamp}${extension}`;
 }

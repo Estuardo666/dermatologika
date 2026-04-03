@@ -28,6 +28,7 @@ export interface PublicCatalogProductSummary {
   id: string;
   slug: string;
   name: string;
+  brand: string;
   description: string;
   href: string;
   price: number;
@@ -37,6 +38,7 @@ export interface PublicCatalogProductSummary {
   badgeColor?: string;
   media: MediaAsset | null;
   category: PublicCatalogCategoryReference | null;
+  categories: PublicCatalogCategoryReference[];
 }
 
 export interface PublicCatalogCategoryOption {
