@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 
 import { ProductBadge } from "@/components/ui/product-badge";
+import { useCart } from "@/features/cart/context/cart-context";
 import { motionTokens } from "@/motion/tokens";
 import type { MediaAsset } from "@/types/media";
 import type { PublicCatalogCategoryReference } from "@/types/public-catalog";
@@ -57,10 +58,70 @@ const addToCartButtonVariants: Variants = {
   },
 };
 
+const cardIdleVariants: Variants = {
+  initial: { opacity: 0, y: 7, scale: 0.96 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: motionTokens.duration.base, ease: motionTokens.ease.soft },
+  },
+  exit: {
+    opacity: 0,
+    y: -5,
+    scale: 0.97,
+    transition: { duration: motionTokens.duration.fast, ease: motionTokens.ease.exit },
+  },
+};
+
+const cardAddedVariants: Variants = {
+  initial: { opacity: 0, scale: 0.88, y: 6 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: motionTokens.duration.base, ease: motionTokens.ease.soft },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    y: -4,
+    transition: { duration: motionTokens.duration.fast, ease: motionTokens.ease.exit },
+  },
+};
+
 export function PublicProductCard({ product }: PublicProductCardProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const [showAddToCart, setShowAddToCart] = useState(false);
+  const [cardState, setCardState] = useState<"idle" | "added">("idle");
+  const cardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { addItem } = useCart();
   const mediaLabel = product.media?.altText?.trim() || product.name;
+
+  useEffect(() => {
+    return () => {
+      if (cardTimerRef.current) clearTimeout(cardTimerRef.current);
+    };
+  }, []);
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (cardState === "added") return;
+    addItem({
+      id: product.id,
+      name: product.name,
+      brand: product.brand,
+      href: product.href,
+      price: product.price,
+      discountPrice: product.discountPrice,
+      imageUrl: product.media?.url ?? null,
+      imageAlt: mediaLabel,
+    });
+    setCardState("added");
+    if (cardTimerRef.current) clearTimeout(cardTimerRef.current);
+    cardTimerRef.current = setTimeout(() => setCardState("idle"), 2200);
+  }
   const basePrice = product.price;
   const hasPrice = basePrice !== null;
   const hasDiscount =
@@ -129,26 +190,71 @@ export function PublicProductCard({ product }: PublicProductCardProps) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <div className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#5bb446] px-3 py-2 text-white transition-colors duration-200 ease-soft hover:bg-[#499038] sm:gap-3 sm:px-4">
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em] sm:gap-2 sm:text-[0.84rem] sm:tracking-[0.03em]">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                      aria-hidden="true"
-                    >
-                      <circle cx="9" cy="21" r="1" />
-                      <circle cx="20" cy="21" r="1" />
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                    </svg>
-                    Agregar al carrito
-                  </span>
-                </div>
+                <motion.button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={cardState === "added"}
+                  whileTap={reduceMotion ? {} : { scale: 0.975, transition: { duration: 0.1 } }}
+                  className={[
+                    "flex w-full min-h-11 items-center justify-center overflow-hidden rounded-full px-3 py-2 text-white transition-colors duration-200 ease-soft sm:px-4",
+                    cardState === "added" ? "cursor-default bg-[#3d9c2a]" : "cursor-pointer bg-[#5bb446] hover:bg-[#499038]",
+                  ].join(" ")}
+                  aria-label={cardState === "added" ? "Producto agregado al carrito" : `Agregar ${product.name} al carrito`}
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    {cardState === "idle" ? (
+                      <motion.span
+                        key="idle"
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em] sm:gap-2 sm:text-[0.84rem] sm:tracking-[0.03em]"
+                        variants={reduceMotion ? {} : cardIdleVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                          aria-hidden="true"
+                        >
+                          <circle cx="9" cy="21" r="1" />
+                          <circle cx="20" cy="21" r="1" />
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+                        Agregar al carrito
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="added"
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em] sm:gap-2 sm:text-[0.84rem] sm:tracking-[0.03em]"
+                        variants={reduceMotion ? {} : cardAddedVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                          aria-hidden="true"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        ¡Agregado!
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               </motion.div>
             ) : (
               <motion.div
@@ -159,26 +265,71 @@ export function PublicProductCard({ product }: PublicProductCardProps) {
                 animate="animate"
                 exit="exit"
               >
-                <div className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#5bb446] px-3 py-2 text-white transition-colors duration-200 ease-soft hover:bg-[#499038] sm:gap-3 sm:px-4">
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em] sm:gap-2 sm:text-[0.84rem] sm:tracking-[0.03em]">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                      aria-hidden="true"
-                    >
-                      <circle cx="9" cy="21" r="1" />
-                      <circle cx="20" cy="21" r="1" />
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                    </svg>
-                    Agregar al carrito
-                  </span>
-                </div>
+                <motion.button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={cardState === "added"}
+                  whileTap={reduceMotion ? {} : { scale: 0.975, transition: { duration: 0.1 } }}
+                  className={[
+                    "flex w-full min-h-11 items-center justify-center overflow-hidden rounded-full px-3 py-2 text-white transition-colors duration-200 ease-soft sm:px-4",
+                    cardState === "added" ? "cursor-default bg-[#3d9c2a]" : "cursor-pointer bg-[#5bb446] hover:bg-[#499038]",
+                  ].join(" ")}
+                  aria-label={cardState === "added" ? "Producto agregado al carrito" : `Agregar ${product.name} al carrito`}
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    {cardState === "idle" ? (
+                      <motion.span
+                        key="idle"
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em] sm:gap-2 sm:text-[0.84rem] sm:tracking-[0.03em]"
+                        variants={reduceMotion ? {} : cardIdleVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                          aria-hidden="true"
+                        >
+                          <circle cx="9" cy="21" r="1" />
+                          <circle cx="20" cy="21" r="1" />
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+                        Agregar al carrito
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="added"
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em] sm:gap-2 sm:text-[0.84rem] sm:tracking-[0.03em]"
+                        variants={reduceMotion ? {} : cardAddedVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                          aria-hidden="true"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        ¡Agregado!
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               </motion.div>
             )
           ) : null}
@@ -223,26 +374,71 @@ export function PublicProductCard({ product }: PublicProductCardProps) {
         </p>
 
         <div className="mt-auto pt-4 md:hidden">
-          <div className="flex w-full min-h-11 items-center justify-center gap-2 rounded-full bg-[#5bb446] px-3 py-2 text-white transition-colors duration-200 ease-soft hover:bg-[#499038]">
-            <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em]">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-3.5 w-3.5"
-                aria-hidden="true"
-              >
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-              </svg>
-              Agregar al carrito
-            </span>
-          </div>
+          <motion.button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={cardState === "added"}
+            whileTap={reduceMotion ? {} : { scale: 0.975, transition: { duration: 0.1 } }}
+            className={[
+              "flex w-full min-h-11 items-center justify-center overflow-hidden rounded-full px-3 py-2 text-white transition-colors duration-200 ease-soft",
+              cardState === "added" ? "cursor-default bg-[#3d9c2a]" : "cursor-pointer bg-[#5bb446] hover:bg-[#499038]",
+            ].join(" ")}
+            aria-label={cardState === "added" ? "Producto agregado al carrito" : `Agregar ${product.name} al carrito`}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {cardState === "idle" ? (
+                <motion.span
+                  key="idle"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em]"
+                  variants={reduceMotion ? {} : cardIdleVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3.5 w-3.5"
+                    aria-hidden="true"
+                  >
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                  Agregar al carrito
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="added"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap text-[0.78rem] font-normal tracking-[0.02em]"
+                  variants={reduceMotion ? {} : cardAddedVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3.5 w-3.5"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  ¡Agregado!
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </div>
       </div>
     </Link>

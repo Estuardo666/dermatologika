@@ -5,7 +5,6 @@ import { PublicBrandHorizontalNav } from "@/features/catalog/components/public-b
 import { PublicCatalogEmptyState } from "@/features/catalog/components/public-catalog-empty-state";
 import { PublicCatalogFilterSidebar } from "@/features/catalog/components/public-catalog-filter-sidebar";
 import { PublicCatalogPagination } from "@/features/catalog/components/public-catalog-pagination";
-import { PublicCatalogInlineBannerCard } from "@/features/catalog/components/public-catalog-promo-banner";
 import { PublicCategoryHorizontalNav } from "@/features/catalog/components/public-category-horizontal-nav";
 import { PublicProductGrid } from "@/features/catalog/components/public-product-grid";
 import { buildProductIndexMetadata } from "@/seo/catalog";
@@ -98,7 +97,6 @@ export default async function PublicProductsPage({ searchParams }: PublicProduct
                   mobileColumns={2}
                   layout="withSidebar"
                   id="catalog-products-top"
-                  inlineBannerSlot={<PublicCatalogInlineBannerCard variant="store" />}
                 />
                 <PublicCatalogPagination
                   basePath="/productos"

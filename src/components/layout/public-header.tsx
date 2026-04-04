@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CartHeaderButton } from "@/components/layout/cart-header-button";
 import { PublicLinkButton } from "@/components/ui/public-link-button";
 
 const navigationLinks = [
@@ -24,12 +25,15 @@ export function PublicHeader() {
             />
           </Link>
 
-          <div className="hidden md:block">
-            <PublicLinkButton
-              action={{ href: "/#contact-cta", label: "Contacto" }}
-              variant="secondary"
-              className="min-h-10 px-5 py-2"
-            />
+          <div className="flex items-center gap-2">
+            <div className="hidden md:block">
+              <PublicLinkButton
+                action={{ href: "/#contact-cta", label: "Contacto" }}
+                variant="secondary"
+                className="min-h-10 px-5 py-2"
+              />
+            </div>
+            <CartHeaderButton />
           </div>
         </div>
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 
 import { ProductBadge } from "@/components/ui/product-badge";
+import { useCart } from "@/features/cart/context/cart-context";
 import { motionTokens } from "@/motion/tokens";
 import type { PublicProductDetailData } from "@/types/public-catalog";
 
@@ -74,6 +75,7 @@ export function PublicProductDetailView({ data }: PublicProductDetailViewProps) 
   const reduceMotion = useReducedMotion() ?? false;
   const { product, brandProducts, recommendedProducts } = data;
 
+  const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [cartState, setCartState] = useState<"idle" | "added">("idle");
   const [isFavorited, setIsFavorited] = useState(false);
@@ -107,9 +109,21 @@ export function PublicProductDetailView({ data }: PublicProductDetailViewProps) 
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       navigator.vibrate([12, 60, 18]);
     }
+    for (let i = 0; i < quantity; i++) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        href: product.href,
+        price: product.price,
+        discountPrice: product.discountPrice,
+        imageUrl: product.media?.url ?? null,
+        imageAlt: product.media?.altText?.trim() || product.name,
+      });
+    }
     setCartState("added");
     cartTimerRef.current = setTimeout(() => setCartState("idle"), 2200);
-  }, [cartState, outOfStock]);
+  }, [cartState, outOfStock, addItem, product, quantity]);
 
   useEffect(() => {
     return () => {
