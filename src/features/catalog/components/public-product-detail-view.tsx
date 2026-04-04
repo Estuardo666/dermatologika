@@ -134,7 +134,7 @@ export function PublicProductDetailView({ data }: PublicProductDetailViewProps) 
   }, []);
 
   return (
-    <div className="container py-10 sm:py-14">
+    <div className="container overflow-x-hidden py-10 sm:py-14">
       <div className="space-y-12">
 
         {/* ── Product layout ──────────────────────────────────────────────── */}
@@ -163,11 +163,11 @@ export function PublicProductDetailView({ data }: PublicProductDetailViewProps) 
           </div>
 
           {/* Right: info panel */}
-          <div className="flex flex-col gap-5">
+          <div className="flex min-w-0 flex-col gap-5">
 
             {/* Breadcrumbs + Stock status */}
             <div className="flex items-start justify-between gap-3">
-              <nav aria-label="Breadcrumb" className="text-body-sm text-text-secondary">
+              <nav aria-label="Breadcrumb" className="min-w-0 text-body-sm text-text-secondary">
                 <ol className="flex flex-wrap items-center gap-2">
                   <li>
                     <Link href="/" className="transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2">
