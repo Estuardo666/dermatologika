@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { parsePublicCatalogSearchParams } from "@/services/catalog/get-public-catalog-data";
+import { parsePublicCatalogSearchParams, resolveBrandIdsFromValues } from "@/services/catalog/get-public-catalog-data";
+import { listPublicBrandOptions } from "@/server/catalog/public-catalog.repository";
 import { countPublicProductRecords } from "@/server/catalog/public-catalog.repository";
 
 export async function GET(request: Request) {
@@ -15,6 +16,22 @@ export async function GET(request: Request) {
     marcas: searchParams.get("marcas") ?? undefined,
   });
 
+  const rawBrandOptions = await listPublicBrandOptions(query.categorySlug || undefined);
+  const brandOptions = rawBrandOptions.map((brand) => ({
+    id: brand.id,
+    slug: brand.name
+      .normalize("NFKD")
+      .replace(/[^\x00-\x7F]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, ""),
+    name: brand.name,
+    logoUrl: brand.mediaAsset?.publicUrl ?? null,
+  }));
+  const resolvedBrandIds = resolveBrandIdsFromValues(query.brandValues, brandOptions);
+
   const totalItems = await countPublicProductRecords({
     query: query.query,
     categorySlug: query.categorySlug,
@@ -22,7 +39,7 @@ export async function GET(request: Request) {
     priceMax: query.priceMax,
     inStock: query.inStock,
     onSale: query.onSale,
-    brandIds: query.brandIds,
+    brandIds: resolvedBrandIds,
   });
 
   return NextResponse.json({ totalItems });

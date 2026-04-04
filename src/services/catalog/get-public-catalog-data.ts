@@ -1,6 +1,7 @@
 import "server-only";
 
 import { buildCategoryHref } from "@/lib/catalog-slugs";
+import { slugifyCatalogName } from "@/lib/catalog-slugs";
 import type { MediaAsset } from "@/types/media";
 import type {
   PublicCatalogBrandOption,
@@ -39,7 +40,7 @@ interface PublicCatalogSearchParams {
   priceMax: number | null;
   inStock: boolean;
   onSale: boolean;
-  brandIds: string[];
+  brandValues: string[];
 }
 
 interface DecimalLike {
@@ -82,7 +83,7 @@ function normalizeBooleanParam(value: string | string[] | undefined): boolean {
   return normalizeStringParam(value) === "1";
 }
 
-function normalizeBrandIdsParam(value: string | string[] | undefined): string[] {
+function normalizeBrandValuesParam(value: string | string[] | undefined): string[] {
   const str = normalizeStringParam(value);
   if (!str) return [];
   return str.split(",").map((s) => s.trim()).filter(Boolean);
@@ -291,7 +292,7 @@ export function parsePublicCatalogSearchParams(
     priceMax: normalizePriceParam(searchParams.precioMax),
     inStock: normalizeBooleanParam(searchParams.enStock),
     onSale: normalizeBooleanParam(searchParams.enOferta),
-    brandIds: normalizeBrandIdsParam(searchParams.marcas),
+    brandValues: normalizeBrandValuesParam(searchParams.marcas),
   };
 }
 
@@ -303,7 +304,7 @@ function buildPublicProductFilters(query: PublicCatalogSearchParams): PublicProd
     priceMax: query.priceMax,
     inStock: query.inStock,
     onSale: query.onSale,
-    brandIds: query.brandIds,
+    brandIds: [],
   };
 }
 
@@ -318,32 +319,69 @@ export async function getPublicCategoryCatalogData(): Promise<PublicCategoryCata
 function mapBrandOption(record: { id: string; name: string; mediaAsset?: { publicUrl: string | null } | null }): PublicCatalogBrandOption {
   return {
     id: record.id,
+    slug: slugifyCatalogName(record.name),
     name: record.name,
     logoUrl: record.mediaAsset?.publicUrl ?? null,
   };
+}
+
+export function resolveBrandIdsFromValues(
+  brandValues: string[],
+  brandOptions: PublicCatalogBrandOption[],
+): string[] {
+  if (brandValues.length === 0) {
+    return [];
+  }
+
+  const normalizedValues = brandValues.map((value) => value.trim().toLowerCase()).filter(Boolean);
+  const brandIds = new Set<string>();
+
+  for (const value of normalizedValues) {
+    const match = brandOptions.find((brand) => brand.id === value || brand.slug === value);
+    if (match) {
+      brandIds.add(match.id);
+    }
+  }
+
+  return [...brandIds];
+}
+
+export function mapBrandIdsToSlugs(
+  brandIds: string[],
+  brandOptions: PublicCatalogBrandOption[],
+): string[] {
+  return brandIds
+    .map((brandId) => brandOptions.find((brand) => brand.id === brandId)?.slug)
+    .filter((slug): slug is string => Boolean(slug));
 }
 
 export async function getPublicProductCatalogData(
   searchParams: Record<string, string | string[] | undefined>,
 ): Promise<PublicProductCatalogData> {
   const query = parsePublicCatalogSearchParams(searchParams);
-  const [records, categoryOptions, brandOptions, maxPrice] = await Promise.all([
-    listPublicProductRecords({
-      ...query,
-      pageSize: PUBLIC_CATALOG_PAGE_SIZE,
-    }),
+  const [categoryOptions, rawBrandOptions, maxPrice] = await Promise.all([
     listPublicCategoryOptions(),
     listPublicBrandOptions(),
     getMaxPublicProductPrice(),
   ]);
+  const brandOptions = rawBrandOptions.map(mapBrandOption);
+  const resolvedBrandIds = resolveBrandIdsFromValues(query.brandValues, brandOptions);
+  const records = await listPublicProductRecords({
+    ...query,
+    brandIds: resolvedBrandIds,
+    pageSize: PUBLIC_CATALOG_PAGE_SIZE,
+  });
 
   return {
     items: records.items.map(mapProductSummary),
-    filters: buildPublicProductFilters(query),
+    filters: {
+      ...buildPublicProductFilters(query),
+      brandIds: resolvedBrandIds,
+    },
     sortBy: query.sortBy,
     pagination: buildPagination(records.filteredCount, query.page),
     categoryOptions: categoryOptions.map(mapCategoryOption),
-    brandOptions: brandOptions.map(mapBrandOption),
+    brandOptions,
     maxPrice,
   };
 }
@@ -361,23 +399,29 @@ export async function getPublicCategoryDetailData(
     ...searchParams,
     categoria: slug,
   });
-  const [records, brandOptions, maxPrice] = await Promise.all([
-    listPublicProductRecords({
-      ...query,
-      categorySlug: slug,
-      pageSize: PUBLIC_CATALOG_PAGE_SIZE,
-    }),
+  const [rawBrandOptions, maxPrice] = await Promise.all([
     listPublicBrandOptions(slug),
     getMaxPublicProductPriceForScope({ categorySlug: slug }),
   ]);
+  const brandOptions = rawBrandOptions.map(mapBrandOption);
+  const resolvedBrandIds = resolveBrandIdsFromValues(query.brandValues, brandOptions);
+  const records = await listPublicProductRecords({
+    ...query,
+    categorySlug: slug,
+    brandIds: resolvedBrandIds,
+    pageSize: PUBLIC_CATALOG_PAGE_SIZE,
+  });
 
   return {
     category: mapCategorySummary(category),
     products: records.items.map(mapProductSummary),
     pagination: buildPagination(records.filteredCount, query.page),
-    filters: buildPublicProductFilters(query),
+    filters: {
+      ...buildPublicProductFilters(query),
+      brandIds: resolvedBrandIds,
+    },
     sortBy: query.sortBy,
-    brandOptions: brandOptions.map(mapBrandOption),
+    brandOptions,
     maxPrice,
   };
 }

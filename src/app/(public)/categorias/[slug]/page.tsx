@@ -8,6 +8,7 @@ import { PublicCatalogPagination } from "@/features/catalog/components/public-ca
 import { PublicCatalogInlineBannerCard, PublicCatalogPageBanner } from "@/features/catalog/components/public-catalog-promo-banner";
 import { PublicProductGrid } from "@/features/catalog/components/public-product-grid";
 import { buildCategoryMetadata } from "@/seo/catalog";
+import { mapBrandIdsToSlugs } from "@/services/catalog/get-public-catalog-data";
 import { getPublicCategoryDetailData } from "@/services/catalog/get-public-catalog-data";
 
 interface PublicCategoryDetailPageProps {
@@ -49,7 +50,7 @@ export default async function PublicCategoryDetailPage({
     ...(data.filters.priceMax !== null ? { precioMax: String(data.filters.priceMax) } : {}),
     ...(data.filters.inStock ? { enStock: "1" } : {}),
     ...(data.filters.onSale ? { enOferta: "1" } : {}),
-    ...(data.filters.brandIds.length > 0 ? { marcas: data.filters.brandIds.join(",") } : {}),
+    ...(data.filters.brandIds.length > 0 ? { marcas: mapBrandIdsToSlugs(data.filters.brandIds, data.brandOptions).join(",") } : {}),
   };
 
   return (

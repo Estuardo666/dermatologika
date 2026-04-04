@@ -58,6 +58,7 @@ function buildCatalogUrl(
   actionPath: string,
   preserved: Pick<PublicProductCatalogFilters, "query" | "categorySlug">,
   d: Pick<FilterDraft, "sortBy" | "priceMin" | "priceMax" | "inStock" | "onSale" | "brandIds">,
+  brandOptions: PublicCatalogBrandOption[],
 ): string {
   const p = new URLSearchParams();
   if (preserved.query) p.set("q", preserved.query);
@@ -67,7 +68,10 @@ function buildCatalogUrl(
   if (d.priceMax !== null) p.set("precioMax", String(d.priceMax));
   if (d.inStock) p.set("enStock", "1");
   if (d.onSale) p.set("enOferta", "1");
-  if (d.brandIds.length > 0) p.set("marcas", d.brandIds.join(","));
+  const brandSlugs = d.brandIds
+    .map((brandId) => brandOptions.find((brand) => brand.id === brandId)?.slug)
+    .filter((slug): slug is string => Boolean(slug));
+  if (brandSlugs.length > 0) p.set("marcas", brandSlugs.join(","));
   const qs = p.toString();
   return qs ? `${actionPath}?${qs}` : actionPath;
 }
@@ -916,7 +920,10 @@ export function PublicCatalogFilterSidebar({
     if (draft.priceMax !== null) search.set("precioMax", String(draft.priceMax));
     if (draft.inStock) search.set("enStock", "1");
     if (draft.onSale) search.set("enOferta", "1");
-    if (draft.brandIds.length > 0) search.set("marcas", draft.brandIds.join(","));
+    const draftBrandSlugs = draft.brandIds
+      .map((brandId) => brandOptions.find((brand) => brand.id === brandId)?.slug)
+      .filter((slug): slug is string => Boolean(slug));
+    if (draftBrandSlugs.length > 0) search.set("marcas", draftBrandSlugs.join(","));
 
     setIsPreviewLoading(true);
     fetch(`/api/catalog/count?${search.toString()}`, { signal: controller.signal })
@@ -969,8 +976,8 @@ export function PublicCatalogFilterSidebar({
   }, [catalogTopId, reduceMotion, router]);
 
   const handleApply = useCallback(() => {
-    navigateCatalog(buildCatalogUrl(actionPath, preservedRouteFilters, draft), true);
-  }, [actionPath, draft, navigateCatalog, preservedRouteFilters]);
+    navigateCatalog(buildCatalogUrl(actionPath, preservedRouteFilters, draft, brandOptions), true);
+  }, [actionPath, brandOptions, draft, navigateCatalog, preservedRouteFilters]);
 
   const handleReset = useCallback(() => {
     navigateCatalog(buildCatalogUrl(actionPath, preservedRouteFilters, {
@@ -980,8 +987,8 @@ export function PublicCatalogFilterSidebar({
       inStock: false,
       onSale: false,
       brandIds: [],
-    }), true);
-  }, [actionPath, navigateCatalog, preservedRouteFilters]);
+    }, brandOptions), true);
+  }, [actionPath, brandOptions, navigateCatalog, preservedRouteFilters]);
 
   const handleInStockToggle = useCallback((v: boolean) => {
     setDraftState((prev) => ({ ...prev, inStock: v }));
@@ -1001,10 +1008,10 @@ export function PublicCatalogFilterSidebar({
         inStock: filters.inStock,
         onSale: filters.onSale,
         brandIds: filters.brandIds,
-      }),
+      }, brandOptions),
       mobileOpen,
     );
-  }, [actionPath, filters.brandIds, filters.inStock, filters.onSale, filters.priceMax, filters.priceMin, mobileOpen, navigateCatalog, preservedRouteFilters]);
+  }, [actionPath, brandOptions, filters.brandIds, filters.inStock, filters.onSale, filters.priceMax, filters.priceMin, mobileOpen, navigateCatalog, preservedRouteFilters]);
 
   const handleRemoveActiveFilter = useCallback(
     (key: "sort" | "price" | "inStock" | "onSale" | "brand", brandId?: string) => {
@@ -1021,7 +1028,7 @@ export function PublicCatalogFilterSidebar({
       // Sort should apply instantly. Other removals should update the draft and wait for explicit Apply.
       if (key === "sort") {
         base.sortBy = "recent";
-        navigateCatalog(buildCatalogUrl(actionPath, preservedRouteFilters, base));
+        navigateCatalog(buildCatalogUrl(actionPath, preservedRouteFilters, base, brandOptions));
         return;
       }
 
@@ -1044,7 +1051,7 @@ export function PublicCatalogFilterSidebar({
         return;
       }
     },
-    [actionPath, filters, navigateCatalog, preservedRouteFilters, sortBy],
+    [actionPath, brandOptions, filters, navigateCatalog, preservedRouteFilters, sortBy],
   );
 
   const toggleSection = useCallback((key: SectionKey) => {
@@ -1137,30 +1144,55 @@ export function PublicCatalogFilterSidebar({
       <AnimatePresence>
         {mobileOpen && (
           <>
-            <motion.div
-              variants={{
-                hidden: {
-                  opacity: 0,
-                  backdropFilter: "blur(0px)",
-                  transition: reduceMotion
-                    ? { duration: 0 }
-                    : { duration: motionTokens.duration.fast, ease: motionTokens.ease.exit },
-                },
-                visible: {
-                  opacity: 1,
-                  backdropFilter: "blur(2px)",
-                  transition: reduceMotion
-                    ? { duration: 0 }
-                    : { duration: motionTokens.duration.base, ease: motionTokens.ease.standard },
-                },
-              }}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              className="fixed inset-0 z-overlay bg-black/40 lg:hidden"
+            <button
+              type="button"
               onClick={() => setMobileOpen(false)}
-              aria-hidden="true"
-            />
+              aria-label="Cerrar filtros"
+              className="fixed inset-0 z-overlay block border-0 bg-transparent p-0 lg:hidden"
+            >
+              <motion.span
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    transition: reduceMotion
+                      ? { duration: 0 }
+                      : { duration: motionTokens.duration.fast, ease: motionTokens.ease.exit },
+                  },
+                  visible: {
+                    opacity: 1,
+                    transition: reduceMotion
+                      ? { duration: 0 }
+                      : { duration: motionTokens.duration.base, ease: motionTokens.ease.standard },
+                  },
+                }}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="absolute inset-0 bg-black/40"
+                aria-hidden="true"
+              />
+              <motion.span
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    transition: reduceMotion
+                      ? { duration: 0 }
+                      : { duration: motionTokens.duration.fast, ease: motionTokens.ease.exit },
+                  },
+                  visible: {
+                    opacity: 1,
+                    transition: reduceMotion
+                      ? { duration: 0 }
+                      : { duration: motionTokens.duration.slow, ease: motionTokens.ease.soft },
+                  },
+                }}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="absolute inset-0 backdrop-blur-[2px]"
+                aria-hidden="true"
+              />
+            </button>
 
             <motion.div
               role="dialog"

@@ -9,6 +9,7 @@ import { PublicCatalogInlineBannerCard } from "@/features/catalog/components/pub
 import { PublicCategoryHorizontalNav } from "@/features/catalog/components/public-category-horizontal-nav";
 import { PublicProductGrid } from "@/features/catalog/components/public-product-grid";
 import { buildProductIndexMetadata } from "@/seo/catalog";
+import { mapBrandIdsToSlugs } from "@/services/catalog/get-public-catalog-data";
 import { getPublicProductCatalogData } from "@/services/catalog/get-public-catalog-data";
 
 export const metadata: Metadata = buildProductIndexMetadata();
@@ -29,7 +30,7 @@ export default async function PublicProductsPage({ searchParams }: PublicProduct
     ...(data.filters.priceMax !== null ? { precioMax: String(data.filters.priceMax) } : {}),
     ...(data.filters.inStock ? { enStock: "1" } : {}),
     ...(data.filters.onSale ? { enOferta: "1" } : {}),
-    ...(data.filters.brandIds.length > 0 ? { marcas: data.filters.brandIds.join(",") } : {}),
+    ...(data.filters.brandIds.length > 0 ? { marcas: mapBrandIdsToSlugs(data.filters.brandIds, data.brandOptions).join(",") } : {}),
   };
 
   return (

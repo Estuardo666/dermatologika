@@ -59,6 +59,7 @@ export interface PublicCatalogCategoryOption {
 
 export interface PublicCatalogBrandOption {
   id: string;
+  slug: string;
   name: string;
   logoUrl: string | null;
 }
