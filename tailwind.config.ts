@@ -90,7 +90,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Google Sans', 'Inter', 'SF Pro Display', 'Segoe UI', 'sans-serif'],
+        sans: ['var(--font-sans)', 'Plus Jakarta Sans', 'Inter', 'SF Pro Display', 'Segoe UI', 'sans-serif'],
       },
       fontSize: {
         'display-xl': ['64px', { lineHeight: '72px', letterSpacing: '-0.03em', fontWeight: '500' }],

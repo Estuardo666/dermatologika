@@ -103,6 +103,10 @@ export function PublicProductDetailView({ data }: PublicProductDetailViewProps) 
 
   const handleAddToCart = useCallback(() => {
     if (cartState !== "idle" || outOfStock) return;
+    // Haptic feedback — Android Chrome; graceful no-op on iOS/desktop
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate([12, 60, 18]);
+    }
     setCartState("added");
     cartTimerRef.current = setTimeout(() => setCartState("idle"), 2200);
   }, [cartState, outOfStock]);
