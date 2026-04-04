@@ -146,7 +146,7 @@ function dedupeCategoryReferences(
     id: string;
     slug: string;
     name: string;
-    href?: string;
+    href: string;
   }>,
 ): PublicCatalogCategoryReference[] {
   const seen = new Set<string>();
