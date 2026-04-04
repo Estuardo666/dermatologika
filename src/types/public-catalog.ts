@@ -74,5 +74,6 @@ export interface PublicCategoryDetailData {
 
 export interface PublicProductDetailData {
   product: PublicCatalogProductSummary;
-  relatedProducts: PublicCatalogProductSummary[];
+  brandProducts: PublicCatalogProductSummary[];
+  recommendedProducts: PublicCatalogProductSummary[];
 }

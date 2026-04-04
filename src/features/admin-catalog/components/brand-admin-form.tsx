@@ -334,11 +334,24 @@ export function BrandAdminForm({ initialData, mode, brand }: BrandAdminFormProps
         <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
           <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
             <h2 className="text-section-lg text-text-primary">Estado de la ficha</h2>
-            <div className="mt-4 space-y-3 text-body-sm text-text-secondary">
-              <p><span className="text-text-primary">Guardado:</span> {saveStatusLabel}</p>
-              <p><span className="text-text-primary">Modo:</span> {mode === "create" ? "Creacion" : "Edicion"}</p>
-              <p><span className="text-text-primary">Nombre:</span> {formData.name || "Pendiente"}</p>
-              <p><span className="text-text-primary">Productos vinculados:</span> {brand?.productCount ?? 0}</p>
+            
+            <div className="mt-5 space-y-2 text-body-sm leading-relaxed">
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-text-secondary whitespace-nowrap">Guardado</span>
+                <span className="text-label-md font-medium text-text-primary text-right leading-snug">{saveStatusLabel}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-text-secondary whitespace-nowrap">Modo</span>
+                <span className="text-label-md font-medium text-text-primary text-right">{mode === "create" ? "Creación" : "Edición"}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-text-secondary whitespace-nowrap">Nombre</span>
+                <span className="text-label-md font-medium text-text-primary text-right break-words leading-snug">{formData.name || "—"}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-text-secondary whitespace-nowrap">Productos</span>
+                <span className="text-label-md font-medium text-text-primary">{brand?.productCount ?? 0}</span>
+              </div>
             </div>
 
             <div className="mt-5 space-y-2 border-t border-border-soft pt-5">

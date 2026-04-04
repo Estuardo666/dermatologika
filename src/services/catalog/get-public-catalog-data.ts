@@ -20,6 +20,7 @@ import {
   listPublicCategoryOptions,
   listPublicCategoryRecords,
   listPublicProductRecords,
+  listProductsByBrand,
   listRelatedPublicProductRecords,
   PUBLIC_CATALOG_PAGE_SIZE,
 } from "@/server/catalog/public-catalog.repository";
@@ -216,7 +217,7 @@ function mapProductSummary(record: {
     name: record.name,
     brand: record.brand,
     description: record.description,
-    href: record.href,
+    href: `/productos/${record.slug}`,
     price: toNumberValue(record.price),
     discountPrice: record.discountPrice === null ? null : toNumberValue(record.discountPrice),
     stock: record.stock,
@@ -325,13 +326,20 @@ export async function getPublicProductDetailData(
     return null;
   }
 
-  const relatedProducts = await listRelatedPublicProductRecords({
-    productId: product.id,
-    categoryIds: product.categoryAssignments.map((assignment) => assignment.category.id),
-  });
+  const categoryIds = product.categoryAssignments.map((a) => a.category.id);
+
+  const [brandProductRecords, recommendedProductRecords] = await Promise.all([
+    listProductsByBrand({ productId: product.id, brand: product.brand }),
+    listRelatedPublicProductRecords({ productId: product.id, categoryIds }),
+  ]);
+
+  const brandProductIds = new Set(brandProductRecords.map((p) => p.id));
 
   return {
     product: mapProductSummary(product),
-    relatedProducts: relatedProducts.map(mapProductSummary),
+    brandProducts: brandProductRecords.map(mapProductSummary),
+    recommendedProducts: recommendedProductRecords
+      .filter((p) => !brandProductIds.has(p.id))
+      .map(mapProductSummary),
   };
 }

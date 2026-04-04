@@ -276,6 +276,11 @@ export function CategoryAdminForm({ initialData, mode, category }: CategoryAdmin
 			router.refresh();
 		} catch (error) {
 			setSubmissionState("error");
+			if (error instanceof TypeError && /failed to fetch/i.test(error.message)) {
+				setErrorMessage("No se pudo conectar con el servidor. Verifica que la app esté corriendo e intenta de nuevo.");
+				return;
+			}
+
 			setErrorMessage(error instanceof Error ? error.message : "No se pudo guardar la categoria.");
 		}
 	}
@@ -342,7 +347,7 @@ export function CategoryAdminForm({ initialData, mode, category }: CategoryAdmin
 
 			<div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_320px]">
 				<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
-					<form onSubmit={handleSubmit} className="space-y-6">
+					<form id="category-form" onSubmit={handleSubmit} className="space-y-6">
 						<div className="rounded-2xl bg-surface-subtle p-4">
 							<div className="space-y-4">
 								<label className="space-y-2 block">
@@ -400,46 +405,60 @@ export function CategoryAdminForm({ initialData, mode, category }: CategoryAdmin
 
 						{errorMessage ? <p className="text-body-sm text-status-error">{errorMessage}</p> : null}
 
-						<div className="flex flex-wrap items-center gap-3 border-t border-border-soft pt-5">
-							<button type="submit" disabled={submissionState === "saving"} className="inline-flex min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:bg-emerald-600 active:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas disabled:opacity-50">
-								{submissionState === "saving" ? "Guardando..." : mode === "edit" ? "Actualizar categoria" : "Crear categoria"}
-							</button>
-
-							<Link href="/admin/catalog/categories" className="inline-flex min-h-11 items-center justify-center rounded-pill border border-border-default bg-surface-canvas px-6 py-3 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-soft active:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
-								Cancelar
-							</Link>
-
-							{mode === "edit" && category ? (
-								<button type="button" onClick={handleDelete} className="inline-flex min-h-11 items-center justify-center rounded-pill border border-status-error/30 px-6 py-3 text-label-md text-status-error transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-status-error/50 hover:bg-status-error/10 active:bg-status-error/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
-									Eliminar categoria
-								</button>
-							) : null}
-						</div>
 					</form>
 				</section>
 
 				<aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
 					<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
 						<h2 className="text-section-lg text-text-primary">Estado de la ficha</h2>
-						<div className="mt-4 space-y-3 text-body-sm text-text-secondary">
-							<p><span className="text-text-primary">Guardado:</span> {saveStatusLabel}</p>
-							<p><span className="text-text-primary">Modo:</span> {mode === "create" ? "Creacion" : "Edicion"}</p>
-							<p><span className="text-text-primary">Slug:</span> {formData.slug || "Pendiente"}</p>
-							<p><span className="text-text-primary">Href:</span> {formData.href || "Pendiente"}</p>
-							<p><span className="text-text-primary">Estado:</span> {formData.isActive ? "Activa" : "Inactiva"}</p>
+		
+						<div className="mt-5 space-y-2 text-body-sm leading-relaxed">
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Guardado</span>
+								<span className="text-label-md font-medium text-text-primary text-right leading-snug">{saveStatusLabel}</span>
+							</div>
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Modo</span>
+								<span className="text-label-md font-medium text-text-primary text-right">{mode === "create" ? "Creación" : "Edición"}</span>
+							</div>
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Slug</span>
+								<span className="text-label-md font-medium text-text-primary text-right break-words leading-snug">{formData.slug || "—"}</span>
+							</div>
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Href</span>
+								<span className="text-label-md font-medium text-text-primary text-right break-words leading-snug">{formData.href || "—"}</span>
+							</div>
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-text-secondary whitespace-nowrap">Estado</span>
+								<span className={cx("text-label-md font-medium", formData.isActive ? "text-emerald-700" : "text-text-secondary")}>
+									{formData.isActive ? "Activa" : "Inactiva"}
+								</span>
+							</div>
+						</div>
+
+						<div className="mt-5 space-y-2 border-t border-border-soft pt-5">
+							{errorMessage ? <p className="mb-2 text-body-sm text-status-error">{errorMessage}</p> : null}
+							<button
+								type="submit"
+								form="category-form"
+								disabled={submissionState === "saving"}
+								className="inline-flex w-full min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:bg-emerald-600 active:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas disabled:opacity-50"
+							>
+								{submissionState === "saving" ? "Guardando..." : mode === "edit" ? "Actualizar categoria" : "Crear categoria"}
+							</button>
+
+							<Link href="/admin/catalog/categories" className="inline-flex w-full min-h-11 items-center justify-center rounded-pill border border-border-default bg-surface-canvas px-6 py-3 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-soft active:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+								Cancelar
+							</Link>
+
+							{mode === "edit" && category ? (
+								<button type="button" onClick={handleDelete} className="inline-flex w-full min-h-11 items-center justify-center rounded-pill border border-status-error/30 px-6 py-3 text-label-md text-status-error transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-status-error/50 hover:bg-status-error/10 active:bg-status-error/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+									Eliminar categoria
+								</button>
+							) : null}
 						</div>
 					</section>
-
-					{category ? (
-						<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
-							<h2 className="text-section-lg text-text-primary">Contexto</h2>
-							<div className="mt-4 space-y-3 text-body-sm text-text-secondary">
-								<p>Total de categorias: {initialData.categories.length}</p>
-								<p>Categorias activas: {initialData.categories.filter((item) => item.isActive).length}</p>
-								<p>Ultima actualizacion: {formatDate(category.updatedAt)}</p>
-							</div>
-						</section>
-					) : null}
 				</aside>
 			</div>
 		</div>

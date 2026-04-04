@@ -601,8 +601,8 @@ export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelPro
     <div className="space-y-8">
       {showCategories ? (
         <div className="grid gap-6 2xl:grid-cols-[minmax(340px,460px)_minmax(0,1fr)]">
-          <section className="space-y-5 rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
-            <div className="space-y-3">
+          <section className="space-y-4 rounded-[28px] border border-border-soft bg-surface-canvas p-4 shadow-xs sm:p-5">
+            <div className="space-y-2.5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-caption uppercase tracking-[0.14em] text-text-muted">Biblioteca</p>
@@ -920,20 +920,17 @@ export function CatalogAdminPanel({ initialData, section }: CatalogAdminPanelPro
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+                <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
                   <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Total</p>
-                  <p className="mt-2 text-headline-sm text-text-primary">{products.length}</p>
-                  <p className="text-body-sm text-text-secondary">productos locales</p>
+                  <p className="mt-1 text-headline-sm text-text-primary">{products.length}</p>
                 </div>
-                <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+                <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
                   <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Activos</p>
-                  <p className="mt-2 text-headline-sm text-text-primary">{activeProductCount}</p>
-                  <p className="text-body-sm text-text-secondary">disponibles para Home</p>
+                  <p className="mt-1 text-headline-sm text-text-primary">{activeProductCount}</p>
                 </div>
-                <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+                <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
                   <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Inactivos</p>
-                  <p className="mt-2 text-headline-sm text-text-primary">{inactiveProductCount}</p>
-                  <p className="text-body-sm text-text-secondary">en pausa o borrador</p>
+                  <p className="mt-1 text-headline-sm text-text-primary">{inactiveProductCount}</p>
                 </div>
               </div>
             </div>

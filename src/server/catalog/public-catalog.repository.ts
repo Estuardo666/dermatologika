@@ -280,6 +280,22 @@ export async function findPublicProductRecordBySlug(slug: string) {
   });
 }
 
+export async function listProductsByBrand(input: {
+  productId: string;
+  brand: string;
+}) {
+  return prisma.product.findMany({
+    where: {
+      ...buildPublicProductVisibilityFilter(),
+      id: { not: input.productId },
+      brand: input.brand,
+    },
+    include: publicProductInclude,
+    orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
+    take: 8,
+  });
+}
+
 export async function listRelatedPublicProductRecords(input: {
   productId: string;
   categoryIds: string[];

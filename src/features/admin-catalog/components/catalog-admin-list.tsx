@@ -340,8 +340,8 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-6 shadow-xs sm:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <AdminBreadcrumbs items={breadcrumbItems} />
             <p className="text-caption uppercase tracking-[0.14em] text-text-muted">
@@ -359,26 +359,19 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
         </div>
       </section>
 
-      <section className="space-y-5 rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+      <section className="space-y-4 rounded-[28px] border border-border-soft bg-surface-canvas p-4 shadow-xs sm:p-5">
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Total</p>
-            <p className="mt-2 text-headline-sm text-text-primary">{libraryData.summary.totalCount}</p>
-            <p className="text-body-sm text-text-secondary">
-              {showCategories ? "categorias registradas" : "productos locales"}
-            </p>
+            <p className="mt-1 text-headline-sm text-text-primary">{libraryData.summary.totalCount}</p>
           </div>
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Activos</p>
-            <p className="mt-2 text-headline-sm text-text-primary">{libraryData.summary.activeCount}</p>
-            <p className="text-body-sm text-text-secondary">
-              {showCategories ? "visibles para seleccion" : "disponibles para Home"}
-            </p>
+            <p className="mt-1 text-headline-sm text-text-primary">{libraryData.summary.activeCount}</p>
           </div>
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Inactivos</p>
-            <p className="mt-2 text-headline-sm text-text-primary">{libraryData.summary.inactiveCount}</p>
-            <p className="text-body-sm text-text-secondary">en reserva editorial</p>
+            <p className="mt-1 text-headline-sm text-text-primary">{libraryData.summary.inactiveCount}</p>
           </div>
         </div>
 
