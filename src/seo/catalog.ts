@@ -7,17 +7,17 @@ import type {
 
 export function buildCategoryIndexMetadata(): Metadata {
   return {
-    title: "Categorias",
+    title: "Categorías",
     description:
-      "Explora las categorias activas del catalogo Dermatologika desde la copia local preparada para storefront.",
+      "Explora todas las categorías de productos dermatológicos en Dermatologika. Encuentra los productos ideales para tu piel.",
   };
 }
 
 export function buildProductIndexMetadata(): Metadata {
   return {
-    title: "Productos",
+    title: "Tienda",
     description:
-      "Consulta el catalogo publico de productos Dermatologika con filtros basicos y media servida desde la base local.",
+      "Descubre la tienda Dermatologika. Productos dermatológicos para el cuidado de la piel respaldados por especialistas.",
   };
 }
 

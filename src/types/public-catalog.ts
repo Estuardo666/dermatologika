@@ -49,6 +49,12 @@ export interface PublicCatalogCategoryOption {
   productCount: number;
 }
 
+export interface PublicCatalogBrandOption {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+}
+
 export interface PublicProductCatalogFilters {
   query: string;
   categorySlug: string;
@@ -60,6 +66,7 @@ export interface PublicProductCatalogData {
   sortBy: PublicProductCatalogSort;
   pagination: PublicCatalogPagination;
   categoryOptions: PublicCatalogCategoryOption[];
+  brandOptions: PublicCatalogBrandOption[];
 }
 
 export interface PublicCategoryCatalogData {

@@ -12,6 +12,8 @@ import { PublicProductCard } from "./public-product-card";
 interface PublicProductGridProps {
   items: PublicCatalogProductSummary[];
   mobileColumns?: 1 | 2;
+  inlineBannerSlot?: React.ReactNode;
+  bannerPosition?: number;
 }
 
 const ROW_STAGGER_DELAY = 0.08;
@@ -36,7 +38,7 @@ function resolveColumnCount(width: number, mobileColumns: 1 | 2): number {
   return mobileColumns;
 }
 
-export function PublicProductGrid({ items, mobileColumns = 1 }: PublicProductGridProps) {
+export function PublicProductGrid({ items, mobileColumns = 1, inlineBannerSlot, bannerPosition = 2 }: PublicProductGridProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const [columnCount, setColumnCount] = useState<number>(mobileColumns);
 
@@ -53,18 +55,38 @@ export function PublicProductGrid({ items, mobileColumns = 1 }: PublicProductGri
     };
   }, [mobileColumns]);
 
+  // Build the ordered list of slots: products with the banner injected at bannerPosition
+  const slots: Array<{ type: "product"; product: PublicCatalogProductSummary } | { type: "banner" }> = [];
+  const insertAt = Math.min(bannerPosition, items.length);
+
+  items.forEach((product, i) => {
+    if (inlineBannerSlot && i === insertAt) {
+      slots.push({ type: "banner" });
+    }
+    slots.push({ type: "product", product });
+  });
+
+  // If insertAt is beyond all items (e.g. fewer items than bannerPosition)
+  if (inlineBannerSlot && insertAt >= items.length) {
+    slots.push({ type: "banner" });
+  }
+
   return (
     <ul
       className={mobileColumns === 2
         ? "grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
         : "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"}
     >
-      {items.map((product, index) => {
-        const rowIndex = Math.floor(index / columnCount);
+      {slots.map((slot, visualIndex) => {
+        if (slot.type === "banner") {
+          return <li key="banner-slot">{inlineBannerSlot}</li>;
+        }
+
+        const rowIndex = Math.floor(visualIndex / columnCount);
 
         return (
           <motion.li
-            key={product.id}
+            key={slot.product.id}
             initial={
               reduceMotion
                 ? { opacity: 0 }
@@ -90,7 +112,7 @@ export function PublicProductGrid({ items, mobileColumns = 1 }: PublicProductGri
               ease: motionTokens.ease.standard,
             }}
           >
-            <PublicProductCard product={product} />
+            <PublicProductCard product={slot.product} />
           </motion.li>
         );
       })}

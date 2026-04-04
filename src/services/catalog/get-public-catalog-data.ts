@@ -1,7 +1,9 @@
 import "server-only";
 
+import { buildCategoryHref } from "@/lib/catalog-slugs";
 import type { MediaAsset } from "@/types/media";
 import type {
+  PublicCatalogBrandOption,
   PublicCatalogCategoryReference,
   PublicCatalogCategoryOption,
   PublicCatalogCategorySummary,
@@ -17,6 +19,7 @@ import type {
 import {
   findPublicCategoryRecordBySlug,
   findPublicProductRecordBySlug,
+  listPublicBrandOptions,
   listPublicCategoryOptions,
   listPublicCategoryRecords,
   listPublicProductRecords,
@@ -92,7 +95,7 @@ function mapCategorySummary(record: {
   slug: string;
   name: string;
   description: string;
-  href: string;
+  href?: string;
   mediaAsset?: {
     id: string;
     kind: "image" | "video";
@@ -114,7 +117,7 @@ function mapCategorySummary(record: {
     slug: record.slug,
     name: record.name,
     description: record.description,
-    href: record.href,
+    href: buildCategoryHref(record.slug),
     media: mapMediaAsset(record.mediaAsset),
     productCount: record._count.productAssignments,
   };
@@ -133,7 +136,7 @@ function mapCategoryOption(record: {
     id: record.id,
     slug: record.slug,
     name: record.name,
-    href: record.href,
+    href: buildCategoryHref(record.slug),
     productCount: record._count.productAssignments,
   };
 }
@@ -143,7 +146,7 @@ function dedupeCategoryReferences(
     id: string;
     slug: string;
     name: string;
-    href: string;
+    href?: string;
   }>,
 ): PublicCatalogCategoryReference[] {
   const seen = new Set<string>();
@@ -205,11 +208,14 @@ function mapProductSummary(record: {
             id: record.category.id,
             slug: record.category.slug,
             name: record.category.name,
-            href: record.category.href,
+            href: buildCategoryHref(record.category.slug),
           },
         ]
       : []),
-    ...((record.categoryAssignments ?? []).map((assignment) => assignment.category)),
+    ...((record.categoryAssignments ?? []).map((assignment) => ({
+      ...assignment.category,
+      href: buildCategoryHref(assignment.category.slug),
+    }))),
   ]);
   const baseItem = {
     id: record.id,
@@ -271,16 +277,25 @@ export async function getPublicCategoryCatalogData(): Promise<PublicCategoryCata
   };
 }
 
+function mapBrandOption(record: { id: string; name: string; mediaAsset?: { publicUrl: string | null } | null }): PublicCatalogBrandOption {
+  return {
+    id: record.id,
+    name: record.name,
+    logoUrl: record.mediaAsset?.publicUrl ?? null,
+  };
+}
+
 export async function getPublicProductCatalogData(
   searchParams: Record<string, string | string[] | undefined>,
 ): Promise<PublicProductCatalogData> {
   const query = parsePublicCatalogSearchParams(searchParams);
-  const [records, categoryOptions] = await Promise.all([
+  const [records, categoryOptions, brandOptions] = await Promise.all([
     listPublicProductRecords({
       ...query,
       pageSize: PUBLIC_CATALOG_PAGE_SIZE,
     }),
     listPublicCategoryOptions(),
+    listPublicBrandOptions(),
   ]);
 
   return {
@@ -289,6 +304,7 @@ export async function getPublicProductCatalogData(
     sortBy: query.sortBy,
     pagination: buildPagination(records.filteredCount, query.page),
     categoryOptions: categoryOptions.map(mapCategoryOption),
+    brandOptions: brandOptions.map(mapBrandOption),
   };
 }
 

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { PublicCatalogEmptyState } from "@/features/catalog/components/public-catalog-empty-state";
 import { PublicCatalogPagination } from "@/features/catalog/components/public-catalog-pagination";
+import { PublicCatalogInlineBannerCard, PublicCatalogPageBanner } from "@/features/catalog/components/public-catalog-promo-banner";
 import { PublicProductGrid } from "@/features/catalog/components/public-product-grid";
 import { buildCategoryMetadata } from "@/seo/catalog";
 import { getPublicCategoryDetailData } from "@/services/catalog/get-public-catalog-data";
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: PublicCategoryDetailPageProps
 
   if (!data) {
     return {
-      title: "Categoria no encontrada",
+      title: "Categoría no encontrada",
     };
   }
 
@@ -41,43 +42,59 @@ export default async function PublicCategoryDetailPage({
   }
 
   return (
-    <div className="container py-10 sm:py-14">
+    <div className="mx-auto w-full max-w-[85vw] px-4 py-8 sm:px-6 sm:py-12">
       <div className="space-y-8">
-        <nav aria-label="Breadcrumb" className="text-body-sm text-text-secondary">
-          <ol className="flex flex-wrap items-center gap-2">
+
+        {/* Breadcrumbs */}
+        <nav aria-label="Breadcrumb" className="text-body-sm text-text-muted">
+          <ol className="flex flex-wrap items-center gap-1.5">
             <li>
-              <Link href="/" className="transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle">
+              <Link
+                href="/"
+                className="transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle"
+              >
                 Inicio
               </Link>
             </li>
-            <li>/</li>
+            <li aria-hidden="true" className="text-text-muted">/</li>
             <li>
-              <Link href="/categorias" className="transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle">
-                Categorias
+              <Link
+                href="/productos"
+                className="transition hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle"
+              >
+                Tienda
               </Link>
             </li>
-            <li>/</li>
-            <li aria-current="page" className="text-text-primary">
+            <li aria-hidden="true" className="text-text-muted">/</li>
+            <li aria-current="page" className="text-text-secondary">
               {data.category.name}
             </li>
           </ol>
         </nav>
 
-        <section className="rounded-[32px] border border-border-soft bg-surface-canvas p-6 shadow-xs sm:p-8 lg:p-10">
-          <div className="max-w-3xl space-y-4">
-            <span className="inline-flex rounded-pill border border-border-brand bg-brand-soft px-3 py-1 text-caption uppercase tracking-[0.14em] text-text-brand">
-              {data.category.productCount} productos activos
-            </span>
-            <div className="space-y-3">
-              <h1 className="text-headline-md text-text-primary sm:text-headline-lg">{data.category.name}</h1>
-              <p className="text-body-md text-text-secondary">{data.category.description}</p>
-            </div>
-          </div>
-        </section>
+        {/* Category heading */}
+        <div className="space-y-3">
+          <h1 className="text-headline-md text-text-primary sm:text-headline-lg">
+            {data.category.name}
+          </h1>
+          {data.category.description ? (
+            <p className="max-w-2xl text-body-md text-text-secondary">
+              {data.category.description}
+            </p>
+          ) : null}
+        </div>
 
+        {/* Full-width promo banner 1 */}
+        <PublicCatalogPageBanner />
+
+        {/* Product grid with inline promo banner 2 as first slot */}
         {data.products.length > 0 ? (
           <>
-            <PublicProductGrid items={data.products} />
+            <PublicProductGrid
+              items={data.products}
+              inlineBannerSlot={<PublicCatalogInlineBannerCard variant="category" />}
+              bannerPosition={0}
+            />
             <PublicCatalogPagination
               basePath={data.category.href}
               pagination={data.pagination}
@@ -86,11 +103,12 @@ export default async function PublicCategoryDetailPage({
           </>
         ) : (
           <PublicCatalogEmptyState
-            title="Esta categoria todavia no tiene productos visibles"
-            description="El equipo puede activar productos desde el catalogo interno y apareceran aqui sin cambiar la plantilla publica."
-            action={{ href: "/categorias", label: "Ver todas las categorias" }}
+            title="Esta categoría todavía no tiene productos visibles"
+            description="Cuando el equipo active productos en esta categoría, aparecerán aquí automáticamente."
+            action={{ href: "/productos", label: "Ver toda la tienda" }}
           />
         )}
+
       </div>
     </div>
   );

@@ -335,3 +335,25 @@ export async function listRelatedPublicProductRecords(input: {
     take: 4,
   });
 }
+
+export async function listPublicBrandOptions() {
+  return prisma.brand.findMany({
+    where: {
+      products: {
+        some: {
+          isActive: true,
+        },
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      mediaAsset: {
+        select: {
+          publicUrl: true,
+        },
+      },
+    },
+    orderBy: [{ name: "asc" }],
+  });
+}

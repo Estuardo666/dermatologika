@@ -483,6 +483,63 @@ export function PublicProductDetailView({ data }: PublicProductDetailViewProps) 
               </div>
             </div>
 
+            {/* ── Trust badges ───────────────────────────────────────────── */}
+            <div className="space-y-3">
+              {/* Security signals */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="flex items-center gap-1.5 text-[0.72rem] text-text-muted">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 shrink-0 text-[#4ea843]" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  Pago seguro
+                </span>
+                <span className="flex items-center gap-1.5 text-[0.72rem] text-text-muted">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 shrink-0 text-[#4ea843]" aria-hidden="true">
+                    <rect x="1" y="3" width="15" height="13" rx="2" />
+                    <path d="M16 8h4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-4" />
+                    <circle cx="12" cy="16" r="1" />
+                  </svg>
+                  Envío protegido
+                </span>
+                <span className="flex items-center gap-1.5 text-[0.72rem] text-text-muted">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 shrink-0 text-[#4ea843]" aria-hidden="true">
+                    <polyline points="23 4 23 10 17 10" />
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                  </svg>
+                  Devoluciones fáciles
+                </span>
+              </div>
+
+              {/* Card logos */}
+              <div className="flex items-center gap-2" aria-label="Métodos de pago aceptados">
+                {/* Visa */}
+                <svg viewBox="0 0 38 24" className="h-5 w-auto opacity-60" aria-label="Visa" role="img">
+                  <rect width="38" height="24" rx="4" fill="#f6f4ef" />
+                  <text x="19" y="17" textAnchor="middle" fontFamily="sans-serif" fontWeight="700" fontSize="11" fill="#1a1f71" letterSpacing="-0.3">VISA</text>
+                </svg>
+                {/* Mastercard */}
+                <svg viewBox="0 0 38 24" className="h-5 w-auto opacity-60" aria-label="Mastercard" role="img">
+                  <rect width="38" height="24" rx="4" fill="#f6f4ef" />
+                  <circle cx="15" cy="12" r="6" fill="#eb001b" fillOpacity="0.85" />
+                  <circle cx="23" cy="12" r="6" fill="#f79e1b" fillOpacity="0.85" />
+                  <path d="M19 7.8a6 6 0 0 1 0 8.4A6 6 0 0 1 19 7.8z" fill="#ff5f00" fillOpacity="0.85" />
+                </svg>
+                {/* Amex */}
+                <svg viewBox="0 0 38 24" className="h-5 w-auto opacity-60" aria-label="American Express" role="img">
+                  <rect width="38" height="24" rx="4" fill="#f6f4ef" />
+                  <text x="19" y="16" textAnchor="middle" fontFamily="sans-serif" fontWeight="700" fontSize="7.5" fill="#2e77bc" letterSpacing="0.2">AMERICAN</text>
+                  <text x="19" y="21" textAnchor="middle" fontFamily="sans-serif" fontWeight="700" fontSize="5" fill="#2e77bc" letterSpacing="1">EXPRESS</text>
+                </svg>
+                {/* Diners Club */}
+                <svg viewBox="0 0 38 24" className="h-5 w-auto opacity-60" aria-label="Diners Club" role="img">
+                  <rect width="38" height="24" rx="4" fill="#f6f4ef" />
+                  <circle cx="15.5" cy="12" r="5.5" fill="none" stroke="#004a97" strokeWidth="1.2" />
+                  <circle cx="22.5" cy="12" r="5.5" fill="none" stroke="#004a97" strokeWidth="1.2" />
+                  <text x="19" y="20.5" textAnchor="middle" fontFamily="sans-serif" fontWeight="600" fontSize="3.8" fill="#004a97" letterSpacing="0.2">DINERS</text>
+                </svg>
+              </div>
+            </div>
+
             {/* Product ID */}
             <p className="text-[0.7rem] tracking-[0.04em] text-text-muted">
               ID: {product.id}
