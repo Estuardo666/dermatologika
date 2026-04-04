@@ -14,37 +14,40 @@ interface PublicProductGridProps {
   mobileColumns?: 1 | 2;
   inlineBannerSlot?: React.ReactNode;
   bannerPosition?: number;
+  layout?: "default" | "withSidebar";
+  id?: string;
 }
 
 const ROW_STAGGER_DELAY = 0.08;
 
-function resolveColumnCount(width: number, mobileColumns: 1 | 2): number {
-  if (width >= 1280) {
-    return 5;
+function resolveColumnCount(
+  width: number,
+  mobileColumns: 1 | 2,
+  layout: "default" | "withSidebar" = "default",
+): number {
+  if (layout === "withSidebar") {
+    if (width >= 1440) return 5;
+    if (width >= 1280) return 4;
+    if (width >= 1024) return 3;
+    if (width >= 768) return 3;
+    if (width >= 640) return 2;
+    return mobileColumns;
   }
 
-  if (width >= 1024) {
-    return 4;
-  }
-
-  if (width >= 768) {
-    return 3;
-  }
-
-  if (width >= 640) {
-    return 2;
-  }
-
+  if (width >= 1280) return 5;
+  if (width >= 1024) return 4;
+  if (width >= 768) return 3;
+  if (width >= 640) return 2;
   return mobileColumns;
 }
 
-export function PublicProductGrid({ items, mobileColumns = 1, inlineBannerSlot, bannerPosition = 2 }: PublicProductGridProps) {
+export function PublicProductGrid({ items, mobileColumns = 1, inlineBannerSlot, bannerPosition = 2, layout = "default", id }: PublicProductGridProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const [columnCount, setColumnCount] = useState<number>(mobileColumns);
 
   useEffect(() => {
     const updateColumnCount = () => {
-      setColumnCount(resolveColumnCount(window.innerWidth, mobileColumns));
+      setColumnCount(resolveColumnCount(window.innerWidth, mobileColumns, layout));
     };
 
     updateColumnCount();
@@ -53,7 +56,7 @@ export function PublicProductGrid({ items, mobileColumns = 1, inlineBannerSlot, 
     return () => {
       window.removeEventListener("resize", updateColumnCount);
     };
-  }, [mobileColumns]);
+  }, [mobileColumns, layout]);
 
   // Build the ordered list of slots: products with the banner injected at bannerPosition
   const slots: Array<{ type: "product"; product: PublicCatalogProductSummary } | { type: "banner" }> = [];
@@ -71,12 +74,17 @@ export function PublicProductGrid({ items, mobileColumns = 1, inlineBannerSlot, 
     slots.push({ type: "banner" });
   }
 
-  return (
-    <ul
-      className={mobileColumns === 2
+  const gridClass =
+    layout === "withSidebar"
+      ? mobileColumns === 2
+        ? "grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+        : "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+      : mobileColumns === 2
         ? "grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-        : "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"}
-    >
+        : "grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
+
+  return (
+    <ul id={id} className={gridClass}>
       {slots.map((slot, visualIndex) => {
         if (slot.type === "banner") {
           return <li key="banner-slot">{inlineBannerSlot}</li>;

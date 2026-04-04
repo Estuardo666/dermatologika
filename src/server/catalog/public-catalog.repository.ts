@@ -13,7 +13,14 @@ interface PublicProductListQuery {
   page: number;
   pageSize: number;
   sortBy: PublicProductCatalogSort;
+  priceMin: number | null;
+  priceMax: number | null;
+  inStock: boolean;
+  onSale: boolean;
+  brandIds: string[];
 }
+
+type PublicProductCountQuery = Omit<PublicProductListQuery, "page" | "pageSize" | "sortBy">;
 
 function buildPublicProductVisibilityFilter(): Prisma.ProductWhereInput {
   return {
@@ -102,6 +109,34 @@ function buildPublicProductCategoryFilter(categorySlug: string): Prisma.ProductW
   };
 }
 
+function buildPublicProductPriceFilter(
+  priceMin: number | null,
+  priceMax: number | null,
+): Prisma.ProductWhereInput | undefined {
+  if (priceMin === null && priceMax === null) return undefined;
+  return {
+    price: {
+      ...(priceMin !== null ? { gte: priceMin } : {}),
+      ...(priceMax !== null ? { lte: priceMax } : {}),
+    },
+  };
+}
+
+function buildPublicProductStockFilter(inStock: boolean): Prisma.ProductWhereInput | undefined {
+  if (!inStock) return undefined;
+  return { stock: { gt: 0 } };
+}
+
+function buildPublicProductOnSaleFilter(onSale: boolean): Prisma.ProductWhereInput | undefined {
+  if (!onSale) return undefined;
+  return { discountPrice: { not: null } };
+}
+
+function buildPublicProductBrandFilter(brandIds: string[]): Prisma.ProductWhereInput | undefined {
+  if (brandIds.length === 0) return undefined;
+  return { brandId: { in: brandIds } };
+}
+
 function combineWhere(
   ...conditions: Array<Prisma.ProductWhereInput | Prisma.CategoryWhereInput | undefined>
 ) {
@@ -122,11 +157,31 @@ function combineWhere(
 function buildPublicProductOrderBy(
   sortBy: PublicProductCatalogSort,
 ): Prisma.ProductOrderByWithRelationInput[] {
-  if (sortBy === "name") {
-    return [{ name: "asc" }, { updatedAt: "desc" }];
+  switch (sortBy) {
+    case "name":      return [{ name: "asc" }, { updatedAt: "desc" }];
+    case "name-desc": return [{ name: "desc" }, { updatedAt: "desc" }];
+    case "price-asc": return [{ price: "asc" }, { name: "asc" }];
+    case "price-desc": return [{ price: "desc" }, { name: "asc" }];
+    case "oldest":    return [{ createdAt: "asc" }, { name: "asc" }];
+    case "bestseller": return [{ stock: "desc" }, { updatedAt: "desc" }];
+    case "highest-discount": return [{ updatedAt: "desc" }, { name: "asc" }];
+    case "recent":
+    default:
+      return [{ updatedAt: "desc" }, { name: "asc" }];
+  }
+}
+
+function getProductDiscountScore(product: {
+  price: Prisma.Decimal | number;
+  discountPrice: Prisma.Decimal | number | null;
+}) {
+  const price = Number(product.price);
+  const discountPrice = product.discountPrice === null ? null : Number(product.discountPrice);
+  if (!Number.isFinite(price) || price <= 0 || discountPrice === null || !Number.isFinite(discountPrice) || discountPrice >= price) {
+    return -1;
   }
 
-  return [{ updatedAt: "desc" }, { name: "asc" }];
+  return ((price - discountPrice) / price) * 100;
 }
 
 const publicCategoryInclude = {
@@ -248,10 +303,41 @@ export async function listPublicProductRecords(query: PublicProductListQuery) {
     buildPublicProductVisibilityFilter(),
     buildPublicProductSearchFilter(query.query),
     buildPublicProductCategoryFilter(query.categorySlug),
+    buildPublicProductPriceFilter(query.priceMin, query.priceMax),
+    buildPublicProductStockFilter(query.inStock),
+    buildPublicProductOnSaleFilter(query.onSale),
+    buildPublicProductBrandFilter(query.brandIds),
   ) as Prisma.ProductWhereInput | undefined;
 
   const skip = (query.page - 1) * query.pageSize;
   const filteredCountQuery = where ? prisma.product.count({ where }) : prisma.product.count();
+
+  if (query.sortBy === "highest-discount") {
+    const [filteredCount, allItems] = await prisma.$transaction([
+      filteredCountQuery,
+      prisma.product.findMany({
+        ...(where ? { where } : {}),
+        include: publicProductInclude,
+      }),
+    ]);
+
+    const items = [...allItems]
+      .sort((left, right) => {
+        const rightScore = getProductDiscountScore(right);
+        const leftScore = getProductDiscountScore(left);
+        if (rightScore !== leftScore) {
+          return rightScore - leftScore;
+        }
+
+        return left.name.localeCompare(right.name, "es", { sensitivity: "base" });
+      })
+      .slice(skip, skip + query.pageSize);
+
+    return {
+      filteredCount,
+      items,
+    };
+  }
 
   const [filteredCount, items] = await prisma.$transaction([
     filteredCountQuery,
@@ -268,6 +354,20 @@ export async function listPublicProductRecords(query: PublicProductListQuery) {
     filteredCount,
     items,
   };
+}
+
+export async function countPublicProductRecords(query: PublicProductCountQuery) {
+  const where = combineWhere(
+    buildPublicProductVisibilityFilter(),
+    buildPublicProductSearchFilter(query.query),
+    buildPublicProductCategoryFilter(query.categorySlug),
+    buildPublicProductPriceFilter(query.priceMin, query.priceMax),
+    buildPublicProductStockFilter(query.inStock),
+    buildPublicProductOnSaleFilter(query.onSale),
+    buildPublicProductBrandFilter(query.brandIds),
+  ) as Prisma.ProductWhereInput | undefined;
+
+  return where ? prisma.product.count({ where }) : prisma.product.count();
 }
 
 export async function findPublicProductRecordBySlug(slug: string) {
@@ -356,4 +456,15 @@ export async function listPublicBrandOptions() {
     },
     orderBy: [{ name: "asc" }],
   });
+}
+
+export async function getMaxPublicProductPrice(): Promise<number> {
+  const result = await prisma.product.aggregate({
+    where: { isActive: true },
+    _max: { price: true },
+  });
+  const raw = result._max.price;
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }

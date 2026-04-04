@@ -42,7 +42,7 @@ export default async function PublicCategoryDetailPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-[85vw] px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto w-full max-w-[85vw] px-[5px] py-8 sm:px-6 sm:py-12">
       <div className="space-y-8">
 
         {/* Breadcrumbs */}
@@ -92,6 +92,7 @@ export default async function PublicCategoryDetailPage({
           <>
             <PublicProductGrid
               items={data.products}
+              id="catalog-products-top"
               inlineBannerSlot={<PublicCatalogInlineBannerCard variant="category" />}
               bannerPosition={0}
             />

@@ -11,7 +11,7 @@ export default async function PublicCategoriesPage() {
   const data = await getPublicCategoryCatalogData();
 
   return (
-    <div className="mx-auto w-full max-w-[85vw] px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto w-full max-w-[85vw] px-[5px] py-8 sm:px-6 sm:py-12">
       <div className="space-y-8">
         <section className="space-y-4">
           <span className="inline-flex rounded-pill border border-border-brand bg-brand-soft px-3 py-1 text-caption uppercase tracking-[0.14em] text-text-brand">

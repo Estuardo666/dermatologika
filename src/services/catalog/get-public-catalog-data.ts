@@ -19,6 +19,7 @@ import type {
 import {
   findPublicCategoryRecordBySlug,
   findPublicProductRecordBySlug,
+  getMaxPublicProductPrice,
   listPublicBrandOptions,
   listPublicCategoryOptions,
   listPublicCategoryRecords,
@@ -33,6 +34,11 @@ interface PublicCatalogSearchParams {
   categorySlug: string;
   page: number;
   sortBy: PublicProductCatalogSort;
+  priceMin: number | null;
+  priceMax: number | null;
+  inStock: boolean;
+  onSale: boolean;
+  brandIds: string[];
 }
 
 interface DecimalLike {
@@ -57,7 +63,28 @@ function normalizePageParam(value: string | string[] | undefined): number {
 }
 
 function normalizeSortParam(value: string | string[] | undefined): PublicProductCatalogSort {
-  return normalizeStringParam(value) === "name" ? "name" : "recent";
+  const v = normalizeStringParam(value);
+  const valid: PublicProductCatalogSort[] = [
+    "recent", "oldest", "name", "name-desc", "price-asc", "price-desc", "bestseller", "highest-discount",
+  ];
+  return valid.includes(v as PublicProductCatalogSort) ? (v as PublicProductCatalogSort) : "recent";
+}
+
+function normalizePriceParam(value: string | string[] | undefined): number | null {
+  const str = normalizeStringParam(value);
+  if (!str) return null;
+  const parsed = Number.parseFloat(str);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function normalizeBooleanParam(value: string | string[] | undefined): boolean {
+  return normalizeStringParam(value) === "1";
+}
+
+function normalizeBrandIdsParam(value: string | string[] | undefined): string[] {
+  const str = normalizeStringParam(value);
+  if (!str) return [];
+  return str.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
 function mapMediaAsset(record: {
@@ -259,6 +286,11 @@ export function parsePublicCatalogSearchParams(
     categorySlug: normalizeStringParam(searchParams.categoria),
     page: normalizePageParam(searchParams.pagina),
     sortBy: normalizeSortParam(searchParams.orden),
+    priceMin: normalizePriceParam(searchParams.precioMin),
+    priceMax: normalizePriceParam(searchParams.precioMax),
+    inStock: normalizeBooleanParam(searchParams.enStock),
+    onSale: normalizeBooleanParam(searchParams.enOferta),
+    brandIds: normalizeBrandIdsParam(searchParams.marcas),
   };
 }
 
@@ -266,6 +298,11 @@ function buildPublicProductFilters(query: PublicCatalogSearchParams): PublicProd
   return {
     query: query.query,
     categorySlug: query.categorySlug,
+    priceMin: query.priceMin,
+    priceMax: query.priceMax,
+    inStock: query.inStock,
+    onSale: query.onSale,
+    brandIds: query.brandIds,
   };
 }
 
@@ -289,13 +326,14 @@ export async function getPublicProductCatalogData(
   searchParams: Record<string, string | string[] | undefined>,
 ): Promise<PublicProductCatalogData> {
   const query = parsePublicCatalogSearchParams(searchParams);
-  const [records, categoryOptions, brandOptions] = await Promise.all([
+  const [records, categoryOptions, brandOptions, maxPrice] = await Promise.all([
     listPublicProductRecords({
       ...query,
       pageSize: PUBLIC_CATALOG_PAGE_SIZE,
     }),
     listPublicCategoryOptions(),
     listPublicBrandOptions(),
+    getMaxPublicProductPrice(),
   ]);
 
   return {
@@ -305,6 +343,7 @@ export async function getPublicProductCatalogData(
     pagination: buildPagination(records.filteredCount, query.page),
     categoryOptions: categoryOptions.map(mapCategoryOption),
     brandOptions: brandOptions.map(mapBrandOption),
+    maxPrice,
   };
 }
 

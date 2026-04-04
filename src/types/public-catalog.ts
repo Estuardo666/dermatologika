@@ -1,6 +1,14 @@
 import type { MediaAsset } from "@/types/media";
 
-export type PublicProductCatalogSort = "recent" | "name";
+export type PublicProductCatalogSort =
+  | "recent"
+  | "oldest"
+  | "name"
+  | "name-desc"
+  | "price-asc"
+  | "price-desc"
+  | "bestseller"
+  | "highest-discount";
 
 export interface PublicCatalogPagination {
   page: number;
@@ -58,6 +66,11 @@ export interface PublicCatalogBrandOption {
 export interface PublicProductCatalogFilters {
   query: string;
   categorySlug: string;
+  priceMin: number | null;
+  priceMax: number | null;
+  inStock: boolean;
+  onSale: boolean;
+  brandIds: string[];
 }
 
 export interface PublicProductCatalogData {
@@ -67,6 +80,7 @@ export interface PublicProductCatalogData {
   pagination: PublicCatalogPagination;
   categoryOptions: PublicCatalogCategoryOption[];
   brandOptions: PublicCatalogBrandOption[];
+  maxPrice: number;
 }
 
 export interface PublicCategoryCatalogData {
