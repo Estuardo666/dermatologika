@@ -36,6 +36,7 @@ interface PublicCatalogFilterSidebarProps {
   brandOptions: PublicCatalogBrandOption[];
   totalItems: number;
   maxPrice: number;
+  includeCategorySlugInUrl?: boolean;
 }
 
 type SectionKey = "ordenar" | "precio" | "marcas";
@@ -814,13 +815,14 @@ export function PublicCatalogFilterSidebar({
   brandOptions,
   totalItems,
   maxPrice,
+  includeCategorySlugInUrl = true,
 }: PublicCatalogFilterSidebarProps) {
   const router = useRouter();
   const reduceMotion = useReducedMotion() ?? false;
   const catalogTopId = "catalog-products-top";
   const preservedRouteFilters = useMemo(
-    () => ({ query: filters.query, categorySlug: filters.categorySlug }),
-    [filters.categorySlug, filters.query],
+    () => ({ query: filters.query, categorySlug: includeCategorySlugInUrl ? filters.categorySlug : "" }),
+    [filters.categorySlug, filters.query, includeCategorySlugInUrl],
   );
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -1136,15 +1138,26 @@ export function PublicCatalogFilterSidebar({
         {mobileOpen && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={
-                reduceMotion
-                  ? { duration: 0 }
-                  : { duration: motionTokens.duration.base, ease: motionTokens.ease.standard }
-              }
-              className="fixed inset-0 z-overlay bg-black/40 backdrop-blur-[2px] lg:hidden"
+              variants={{
+                hidden: {
+                  opacity: 0,
+                  backdropFilter: "blur(0px)",
+                  transition: reduceMotion
+                    ? { duration: 0 }
+                    : { duration: motionTokens.duration.fast, ease: motionTokens.ease.exit },
+                },
+                visible: {
+                  opacity: 1,
+                  backdropFilter: "blur(2px)",
+                  transition: reduceMotion
+                    ? { duration: 0 }
+                    : { duration: motionTokens.duration.base, ease: motionTokens.ease.standard },
+                },
+              }}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="fixed inset-0 z-overlay bg-black/40 lg:hidden"
               onClick={() => setMobileOpen(false)}
               aria-hidden="true"
             />
@@ -1158,20 +1171,20 @@ export function PublicCatalogFilterSidebar({
                   y: "100%",
                   transition: reduceMotion
                     ? { duration: 0 }
-                    : { duration: 0.22, ease: [0.4, 0, 1, 1] },
+                    : { duration: motionTokens.duration.base, ease: motionTokens.ease.exit },
                 },
                 visible: {
                   y: 0,
                   transition: reduceMotion
                     ? { duration: 0 }
-                    : { type: "spring", stiffness: 420, damping: 42, mass: 1 },
+                    : { duration: motionTokens.duration.emphasis, ease: motionTokens.ease.soft },
                 },
               }}
               initial="hidden"
               animate="visible"
               exit="hidden"
               className="fixed bottom-0 left-0 right-0 z-modal flex flex-col rounded-none bg-surface-canvas shadow-lg lg:hidden"
-              style={{ maxHeight: "85dvh" }}
+              style={{ maxHeight: "85dvh", willChange: "transform" }}
             >
               <div className="flex shrink-0 justify-center pb-1 pt-3">
                 <div className="h-1 w-10 rounded-full bg-border-default" aria-hidden="true" />

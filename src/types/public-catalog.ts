@@ -91,6 +91,10 @@ export interface PublicCategoryDetailData {
   category: PublicCatalogCategorySummary;
   products: PublicCatalogProductSummary[];
   pagination: PublicCatalogPagination;
+  filters: PublicProductCatalogFilters;
+  sortBy: PublicProductCatalogSort;
+  brandOptions: PublicCatalogBrandOption[];
+  maxPrice: number;
 }
 
 export interface PublicProductDetailData {

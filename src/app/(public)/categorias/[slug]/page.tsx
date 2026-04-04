@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PublicCatalogEmptyState } from "@/features/catalog/components/public-catalog-empty-state";
+import { PublicCatalogFilterSidebar } from "@/features/catalog/components/public-catalog-filter-sidebar";
 import { PublicCatalogPagination } from "@/features/catalog/components/public-catalog-pagination";
 import { PublicCatalogInlineBannerCard, PublicCatalogPageBanner } from "@/features/catalog/components/public-catalog-promo-banner";
 import { PublicProductGrid } from "@/features/catalog/components/public-product-grid";
@@ -41,9 +42,22 @@ export default async function PublicCategoryDetailPage({
     notFound();
   }
 
+  const normalizedSearchParams: Record<string, string> = {
+    ...(data.filters.query ? { q: data.filters.query } : {}),
+    ...(data.sortBy !== "recent" ? { orden: data.sortBy } : {}),
+    ...(data.filters.priceMin !== null ? { precioMin: String(data.filters.priceMin) } : {}),
+    ...(data.filters.priceMax !== null ? { precioMax: String(data.filters.priceMax) } : {}),
+    ...(data.filters.inStock ? { enStock: "1" } : {}),
+    ...(data.filters.onSale ? { enOferta: "1" } : {}),
+    ...(data.filters.brandIds.length > 0 ? { marcas: data.filters.brandIds.join(",") } : {}),
+  };
+
   return (
-    <div className="mx-auto w-full max-w-[85vw] px-[5px] py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto w-[95vw] px-[5px] py-8 sm:px-6 sm:py-12">
       <div className="space-y-8">
+
+        {/* Full-width promo banner 1 */}
+        <PublicCatalogPageBanner />
 
         {/* Breadcrumbs */}
         <nav aria-label="Breadcrumb" className="text-body-sm text-text-muted">
@@ -84,31 +98,43 @@ export default async function PublicCategoryDetailPage({
           ) : null}
         </div>
 
-        {/* Full-width promo banner 1 */}
-        <PublicCatalogPageBanner />
-
-        {/* Product grid with inline promo banner 2 as first slot */}
-        {data.products.length > 0 ? (
-          <>
-            <PublicProductGrid
-              items={data.products}
-              id="catalog-products-top"
-              inlineBannerSlot={<PublicCatalogInlineBannerCard variant="category" />}
-              bannerPosition={0}
-            />
-            <PublicCatalogPagination
-              basePath={data.category.href}
-              pagination={data.pagination}
-              searchParams={{}}
-            />
-          </>
-        ) : (
-          <PublicCatalogEmptyState
-            title="Esta categoría todavía no tiene productos visibles"
-            description="Cuando el equipo active productos en esta categoría, aparecerán aquí automáticamente."
-            action={{ href: "/productos", label: "Ver toda la tienda" }}
+        <div className="flex items-start gap-8">
+          <PublicCatalogFilterSidebar
+            actionPath={data.category.href}
+            filters={data.filters}
+            sortBy={data.sortBy}
+            brandOptions={data.brandOptions}
+            maxPrice={data.maxPrice}
+            totalItems={data.pagination.totalItems}
+            includeCategorySlugInUrl={false}
           />
-        )}
+
+          <div className="min-w-0 flex-1 space-y-6">
+            {data.products.length > 0 ? (
+              <>
+                <PublicProductGrid
+                  items={data.products}
+                  mobileColumns={2}
+                  layout="withSidebar"
+                  id="catalog-products-top"
+                  inlineBannerSlot={<PublicCatalogInlineBannerCard variant="category" />}
+                  bannerPosition={0}
+                />
+                <PublicCatalogPagination
+                  basePath={data.category.href}
+                  pagination={data.pagination}
+                  searchParams={normalizedSearchParams}
+                />
+              </>
+            ) : (
+              <PublicCatalogEmptyState
+                title="Esta categoría todavía no tiene productos visibles"
+                description="Cuando el equipo active productos en esta categoría, aparecerán aquí automáticamente."
+                action={{ href: "/productos", label: "Ver toda la tienda" }}
+              />
+            )}
+          </div>
+        </div>
 
       </div>
     </div>

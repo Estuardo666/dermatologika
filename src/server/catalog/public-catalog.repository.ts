@@ -22,6 +22,8 @@ interface PublicProductListQuery {
 
 type PublicProductCountQuery = Omit<PublicProductListQuery, "page" | "pageSize" | "sortBy">;
 
+type PublicProductScopeQuery = Partial<PublicProductCountQuery>;
+
 function buildPublicProductVisibilityFilter(): Prisma.ProductWhereInput {
   return {
     isActive: true,
@@ -135,6 +137,18 @@ function buildPublicProductOnSaleFilter(onSale: boolean): Prisma.ProductWhereInp
 function buildPublicProductBrandFilter(brandIds: string[]): Prisma.ProductWhereInput | undefined {
   if (brandIds.length === 0) return undefined;
   return { brandId: { in: brandIds } };
+}
+
+function buildPublicProductWhere(query: PublicProductScopeQuery = {}) {
+  return combineWhere(
+    buildPublicProductVisibilityFilter(),
+    buildPublicProductSearchFilter(query.query ?? ""),
+    buildPublicProductCategoryFilter(query.categorySlug ?? ""),
+    buildPublicProductPriceFilter(query.priceMin ?? null, query.priceMax ?? null),
+    buildPublicProductStockFilter(query.inStock ?? false),
+    buildPublicProductOnSaleFilter(query.onSale ?? false),
+    buildPublicProductBrandFilter(query.brandIds ?? []),
+  ) as Prisma.ProductWhereInput | undefined;
 }
 
 function combineWhere(
@@ -299,15 +313,7 @@ export async function findPublicCategoryRecordBySlug(slug: string) {
 }
 
 export async function listPublicProductRecords(query: PublicProductListQuery) {
-  const where = combineWhere(
-    buildPublicProductVisibilityFilter(),
-    buildPublicProductSearchFilter(query.query),
-    buildPublicProductCategoryFilter(query.categorySlug),
-    buildPublicProductPriceFilter(query.priceMin, query.priceMax),
-    buildPublicProductStockFilter(query.inStock),
-    buildPublicProductOnSaleFilter(query.onSale),
-    buildPublicProductBrandFilter(query.brandIds),
-  ) as Prisma.ProductWhereInput | undefined;
+  const where = buildPublicProductWhere(query);
 
   const skip = (query.page - 1) * query.pageSize;
   const filteredCountQuery = where ? prisma.product.count({ where }) : prisma.product.count();
@@ -357,15 +363,7 @@ export async function listPublicProductRecords(query: PublicProductListQuery) {
 }
 
 export async function countPublicProductRecords(query: PublicProductCountQuery) {
-  const where = combineWhere(
-    buildPublicProductVisibilityFilter(),
-    buildPublicProductSearchFilter(query.query),
-    buildPublicProductCategoryFilter(query.categorySlug),
-    buildPublicProductPriceFilter(query.priceMin, query.priceMax),
-    buildPublicProductStockFilter(query.inStock),
-    buildPublicProductOnSaleFilter(query.onSale),
-    buildPublicProductBrandFilter(query.brandIds),
-  ) as Prisma.ProductWhereInput | undefined;
+  const where = buildPublicProductWhere(query);
 
   return where ? prisma.product.count({ where }) : prisma.product.count();
 }
@@ -436,12 +434,34 @@ export async function listRelatedPublicProductRecords(input: {
   });
 }
 
-export async function listPublicBrandOptions() {
+export async function listPublicBrandOptions(categorySlug?: string) {
   return prisma.brand.findMany({
     where: {
       products: {
         some: {
           isActive: true,
+          ...(categorySlug
+            ? {
+                OR: [
+                  {
+                    category: {
+                      slug: categorySlug,
+                      isActive: true,
+                    },
+                  },
+                  {
+                    categoryAssignments: {
+                      some: {
+                        category: {
+                          slug: categorySlug,
+                          isActive: true,
+                        },
+                      },
+                    },
+                  },
+                ],
+              }
+            : {}),
         },
       },
     },
@@ -459,11 +479,24 @@ export async function listPublicBrandOptions() {
 }
 
 export async function getMaxPublicProductPrice(): Promise<number> {
+  const where = buildPublicProductWhere();
   const result = await prisma.product.aggregate({
-    where: { isActive: true },
+    ...(where ? { where } : {}),
     _max: { price: true },
   });
-  const raw = result._max.price;
+  const raw = result._max?.price;
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+export async function getMaxPublicProductPriceForScope(query: PublicProductScopeQuery = {}): Promise<number> {
+  const where = buildPublicProductWhere(query);
+  const result = await prisma.product.aggregate({
+    ...(where ? { where } : {}),
+    _max: { price: true },
+  });
+  const raw = result._max?.price;
   if (!raw) return 0;
   const n = Number(raw);
   return Number.isFinite(n) && n > 0 ? n : 0;

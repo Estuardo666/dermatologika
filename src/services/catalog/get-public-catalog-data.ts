@@ -20,6 +20,7 @@ import {
   findPublicCategoryRecordBySlug,
   findPublicProductRecordBySlug,
   getMaxPublicProductPrice,
+  getMaxPublicProductPriceForScope,
   listPublicBrandOptions,
   listPublicCategoryOptions,
   listPublicCategoryRecords,
@@ -360,16 +361,24 @@ export async function getPublicCategoryDetailData(
     ...searchParams,
     categoria: slug,
   });
-  const records = await listPublicProductRecords({
-    ...query,
-    categorySlug: slug,
-    pageSize: PUBLIC_CATALOG_PAGE_SIZE,
-  });
+  const [records, brandOptions, maxPrice] = await Promise.all([
+    listPublicProductRecords({
+      ...query,
+      categorySlug: slug,
+      pageSize: PUBLIC_CATALOG_PAGE_SIZE,
+    }),
+    listPublicBrandOptions(slug),
+    getMaxPublicProductPriceForScope({ categorySlug: slug }),
+  ]);
 
   return {
     category: mapCategorySummary(category),
     products: records.items.map(mapProductSummary),
     pagination: buildPagination(records.filteredCount, query.page),
+    filters: buildPublicProductFilters(query),
+    sortBy: query.sortBy,
+    brandOptions: brandOptions.map(mapBrandOption),
+    maxPrice,
   };
 }
 
