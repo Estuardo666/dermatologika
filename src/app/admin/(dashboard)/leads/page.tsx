@@ -1,3 +1,8 @@
+import {
+  ADMIN_HERO_SURFACE_CLASS_NAME,
+  ADMIN_PANEL_SURFACE_CLASS_NAME,
+} from "@/components/admin/surface-styles";
+
 export const metadata = {
   title: "Admin Leads — Dermatologika",
   description: "Gestionar contactos administrativos",
@@ -6,7 +11,7 @@ export const metadata = {
 export default function AdminLeadsPage() {
   return (
     <div className="space-y-4">
-      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-6 shadow-xs sm:p-8">
+      <section className={ADMIN_HERO_SURFACE_CLASS_NAME}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <p className="text-caption uppercase tracking-[0.14em] text-text-muted">CRM</p>
@@ -24,7 +29,7 @@ export default function AdminLeadsPage() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-6 shadow-xs sm:p-8">
+      <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
         <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed border-border-soft bg-surface-subtle px-6 py-10 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border-brand bg-surface-brandTint text-label-lg text-text-brand">
             0

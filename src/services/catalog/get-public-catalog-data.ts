@@ -2,6 +2,7 @@ import "server-only";
 
 import { buildCategoryHref } from "@/lib/catalog-slugs";
 import { slugifyCatalogName } from "@/lib/catalog-slugs";
+import { resolvePromotionDisplayContent } from "@/lib/promotion-display";
 import type { MediaAsset } from "@/types/media";
 import type {
   PublicCatalogBrandOption,
@@ -9,6 +10,7 @@ import type {
   PublicCatalogCategoryOption,
   PublicCatalogCategorySummary,
   PublicCatalogPagination,
+  PublicPromotionPill,
   PublicCatalogProductSummary,
   PublicCategoryDetailData,
   PublicCategoryCatalogData,
@@ -30,6 +32,9 @@ import {
   listRelatedPublicProductRecords,
   PUBLIC_CATALOG_PAGE_SIZE,
 } from "@/server/catalog/public-catalog.repository";
+import { listActivePromotionRecords } from "@/server/pricing/promotion.repository";
+import { parsePromotionConfig } from "@/server/pricing/promotion.schemas";
+import type { PromotionRuleType } from "@/types/admin-promotions";
 
 interface PublicCatalogSearchParams {
   query: string;
@@ -190,11 +195,14 @@ function dedupeCategoryReferences(
   });
 }
 
-function mapProductSummary(record: {
+interface ProductSummaryRecord {
   id: string;
   slug: string;
   name: string;
   brand: string;
+  brandRecord?: {
+    id: string;
+  } | null;
   description: string;
   href: string;
   price: number | DecimalLike;
@@ -229,7 +237,25 @@ function mapProductSummary(record: {
     height: number | null;
     durationSeconds: number | null;
   } | null;
-}): PublicCatalogProductSummary {
+}
+
+interface ActiveCatalogPromotion {
+  id: string;
+  shortLabel: string;
+  badgeParts: string[];
+  fullLabel: string;
+  tooltip: string;
+  priority: number;
+  createdAt: Date;
+  productIds: Set<string>;
+  categoryIds: Set<string>;
+  brandIds: Set<string>;
+}
+
+function mapProductSummary(
+  record: ProductSummaryRecord,
+  promotionByProductId: Map<string, PublicPromotionPill> = new Map(),
+): PublicCatalogProductSummary {
   const categories = dedupeCategoryReferences([
     ...(record.category
       ? [
@@ -256,6 +282,7 @@ function mapProductSummary(record: {
     price: toNumberValue(record.price),
     discountPrice: record.discountPrice === null ? null : toNumberValue(record.discountPrice),
     stock: record.stock,
+    activePromotion: promotionByProductId.get(record.id) ?? null,
     media: mapMediaAsset(record.mediaAsset),
     category: categories[0] ?? null,
     categories,
@@ -264,6 +291,108 @@ function mapProductSummary(record: {
   return record.badge
     ? { ...baseItem, badge: record.badge, ...(record.badgeColor ? { badgeColor: record.badgeColor } : {}) }
     : baseItem;
+}
+
+function isPromotionWithinActiveWindow(
+  promotion: { startsAt: Date | null; endsAt: Date | null },
+  now: Date,
+): boolean {
+  if (promotion.startsAt && promotion.startsAt > now) {
+    return false;
+  }
+
+  if (promotion.endsAt && promotion.endsAt < now) {
+    return false;
+  }
+
+  return true;
+}
+
+function collectProductCategoryIds(record: ProductSummaryRecord): string[] {
+  const categoryIds = new Set<string>();
+
+  if (record.categoryId) {
+    categoryIds.add(record.categoryId);
+  }
+
+  for (const assignment of record.categoryAssignments ?? []) {
+    categoryIds.add(assignment.category.id);
+  }
+
+  return [...categoryIds];
+}
+
+function promotionMatchesProduct(record: ProductSummaryRecord, promotion: ActiveCatalogPromotion): boolean {
+  const hasScopedEntities = promotion.productIds.size > 0 || promotion.categoryIds.size > 0 || promotion.brandIds.size > 0;
+  if (!hasScopedEntities) {
+    return true;
+  }
+
+  if (promotion.productIds.has(record.id)) {
+    return true;
+  }
+
+  const brandId = record.brandRecord?.id ?? null;
+
+  if (brandId && promotion.brandIds.has(brandId)) {
+    return true;
+  }
+
+  const categoryIds = collectProductCategoryIds(record);
+  return categoryIds.some((categoryId) => promotion.categoryIds.has(categoryId));
+}
+
+async function resolvePromotionByProductId(records: ProductSummaryRecord[]): Promise<Map<string, PublicPromotionPill>> {
+  if (records.length === 0) {
+    return new Map();
+  }
+
+  const now = new Date();
+  const activePromotions: ActiveCatalogPromotion[] = (await listActivePromotionRecords())
+    .filter((promotion) => promotion.triggerType === "automatic")
+    .filter((promotion) => isPromotionWithinActiveWindow(promotion, now))
+    .map((promotion) => {
+      const config = parsePromotionConfig(promotion.ruleType as PromotionRuleType, promotion.config);
+      const displayContent = resolvePromotionDisplayContent(promotion.ruleType as PromotionRuleType, config);
+      const promotionDescription = promotion.description?.trim() ?? "";
+
+      return {
+        id: promotion.id,
+        ...displayContent,
+        tooltip: promotionDescription.length > 0 ? promotionDescription : displayContent.tooltip,
+        fullLabel: promotion.name,
+        priority: promotion.priority,
+        createdAt: promotion.createdAt,
+        productIds: new Set(promotion.productScopes.map((entry) => entry.productId)),
+        categoryIds: new Set(promotion.categoryScopes.map((entry) => entry.categoryId)),
+        brandIds: new Set(promotion.brandScopes.map((entry) => entry.brandId)),
+      };
+    })
+    .sort((left, right) => {
+      if (left.priority !== right.priority) {
+        return right.priority - left.priority;
+      }
+
+      return right.createdAt.getTime() - left.createdAt.getTime();
+    });
+
+  const promotionByProductId = new Map<string, PublicPromotionPill>();
+
+  for (const record of records) {
+    const matchedPromotion = activePromotions.find((promotion) => promotionMatchesProduct(record, promotion));
+    if (!matchedPromotion) {
+      continue;
+    }
+
+    promotionByProductId.set(record.id, {
+      shortLabel: matchedPromotion.shortLabel,
+      badgeParts: matchedPromotion.badgeParts,
+      fullLabel: matchedPromotion.fullLabel,
+      tooltip: matchedPromotion.tooltip,
+    });
+  }
+
+  return promotionByProductId;
 }
 
 function buildPagination(totalItems: number, page: number): PublicCatalogPagination {
@@ -371,9 +500,10 @@ export async function getPublicProductCatalogData(
     brandIds: resolvedBrandIds,
     pageSize: PUBLIC_CATALOG_PAGE_SIZE,
   });
+  const promotionByProductId = await resolvePromotionByProductId(records.items);
 
   return {
-    items: records.items.map(mapProductSummary),
+    items: records.items.map((record) => mapProductSummary(record, promotionByProductId)),
     filters: {
       ...buildPublicProductFilters(query),
       brandIds: resolvedBrandIds,
@@ -411,10 +541,11 @@ export async function getPublicCategoryDetailData(
     brandIds: resolvedBrandIds,
     pageSize: PUBLIC_CATALOG_PAGE_SIZE,
   });
+  const promotionByProductId = await resolvePromotionByProductId(records.items);
 
   return {
     category: mapCategorySummary(category),
-    products: records.items.map(mapProductSummary),
+    products: records.items.map((record) => mapProductSummary(record, promotionByProductId)),
     pagination: buildPagination(records.filteredCount, query.page),
     filters: {
       ...buildPublicProductFilters(query),
@@ -440,14 +571,19 @@ export async function getPublicProductDetailData(
     listProductsByBrand({ productId: product.id, brand: product.brand }),
     listRelatedPublicProductRecords({ productId: product.id, categoryIds }),
   ]);
+  const promotionByProductId = await resolvePromotionByProductId([
+    product,
+    ...brandProductRecords,
+    ...recommendedProductRecords,
+  ]);
 
   const brandProductIds = new Set(brandProductRecords.map((p) => p.id));
 
   return {
-    product: mapProductSummary(product),
-    brandProducts: brandProductRecords.map(mapProductSummary),
+    product: mapProductSummary(product, promotionByProductId),
+    brandProducts: brandProductRecords.map((record) => mapProductSummary(record, promotionByProductId)),
     recommendedProducts: recommendedProductRecords
       .filter((p) => !brandProductIds.has(p.id))
-      .map(mapProductSummary),
+      .map((record) => mapProductSummary(record, promotionByProductId)),
   };
 }

@@ -9,7 +9,7 @@ import { ProductBadge } from "@/components/ui/product-badge";
 import { useCart } from "@/features/cart/context/cart-context";
 import { motionTokens } from "@/motion/tokens";
 import type { MediaAsset } from "@/types/media";
-import type { PublicCatalogCategoryReference } from "@/types/public-catalog";
+import type { PublicCatalogCategoryReference, PublicPromotionPill } from "@/types/public-catalog";
 
 interface PublicProductCardProps {
   product: {
@@ -21,6 +21,7 @@ interface PublicProductCardProps {
     discountPrice: number | null;
     badge?: string;
     badgeColor?: string;
+    activePromotion?: PublicPromotionPill | null;
     media: MediaAsset | null;
     category: PublicCatalogCategoryReference | null;
   };
@@ -134,6 +135,7 @@ export function PublicProductCard({ product }: PublicProductCardProps) {
   const discountPercentage = hasDiscount && basePrice !== null && product.discountPrice !== null
     ? Math.max(1, Math.round(((basePrice - product.discountPrice) / basePrice) * 100))
     : null;
+  const activePromotion = product.activePromotion ?? null;
 
   return (
     <Link
@@ -163,6 +165,24 @@ export function PublicProductCard({ product }: PublicProductCardProps) {
             </div>
           )}
         </div>
+
+        {activePromotion ? (
+          <div className="group/promo absolute left-3 top-3 max-w-[68%]">
+            <span
+              className="inline-flex max-w-full items-center rounded-full border border-emerald-200 bg-emerald-50/95 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-emerald-800 shadow-[0_8px_24px_rgba(16,185,129,0.12)]"
+              title={activePromotion.tooltip}
+              aria-label={activePromotion.tooltip}
+            >
+              <span className="truncate">{activePromotion.shortLabel}</span>
+            </span>
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute left-0 top-full z-tooltip mt-2 w-[220px] rounded-md bg-ink-700 px-3 py-2 text-[0.72rem] font-medium leading-relaxed text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/promo:opacity-100 group-focus-visible:opacity-100"
+            >
+              {activePromotion.tooltip}
+            </span>
+          </div>
+        ) : null}
 
         <div className="absolute right-3 top-3 flex max-w-[70%] flex-col items-end gap-2">
           {product.badge ? (

@@ -2,6 +2,19 @@
 
 import { startTransition, useMemo, useState, type FormEvent } from "react";
 
+import { ADMIN_COMPACT_FIELD_CLASS_NAME } from "@/components/admin/form-styles";
+import {
+  ADMIN_BUTTON_DANGER_CLASS_NAME,
+  ADMIN_BUTTON_NEUTRAL_SMALL_CLASS_NAME,
+  ADMIN_BUTTON_PRIMARY_CLASS_NAME,
+  ADMIN_BUTTON_SECONDARY_CLASS_NAME,
+  ADMIN_HERO_SURFACE_CLASS_NAME,
+  ADMIN_INSET_CARD_CLASS_NAME,
+  ADMIN_LIST_ITEM_ACTIVE_CLASS_NAME,
+  ADMIN_LIST_ITEM_CLASS_NAME,
+  ADMIN_PANEL_SURFACE_CLASS_NAME,
+  ADMIN_STICKY_PANEL_SURFACE_CLASS_NAME,
+} from "@/components/admin/surface-styles";
 import { AdminBreadcrumbs } from "@/components/layout/admin-breadcrumbs";
 import { ProductBadge } from "@/components/ui/product-badge";
 import { cx } from "@/lib/utils";
@@ -20,8 +33,6 @@ type SubmissionState = "idle" | "saving" | "success" | "error";
 interface BadgePresetAdminPanelProps {
   initialPresets: AdminProductBadgePresetItem[];
 }
-
-const adminFieldClassName = "w-full rounded-xl border border-[#c0d4be] bg-[#f8fbf7] px-4 py-3 text-body-md text-text-primary transition-[border-color,box-shadow,background-color] duration-[200ms] ease-soft hover:border-brand-primary hover:bg-[#fbfdfb] active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle";
 
 function buildEmptyPresetForm(nextSortOrder = 0): AdminProductBadgePresetFormData {
   return {
@@ -149,7 +160,7 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-6 shadow-xs sm:p-8">
+      <section className={ADMIN_HERO_SURFACE_CLASS_NAME}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <AdminBreadcrumbs
@@ -169,19 +180,19 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_360px]">
-        <section className="space-y-5 rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+        <section className={`space-y-5 ${ADMIN_PANEL_SURFACE_CLASS_NAME}`}>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+            <div className={ADMIN_INSET_CARD_CLASS_NAME}>
               <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Total</p>
               <p className="mt-2 text-headline-sm text-text-primary">{presets.length}</p>
               <p className="text-body-sm text-text-secondary">presets registrados</p>
             </div>
-            <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+            <div className={ADMIN_INSET_CARD_CLASS_NAME}>
               <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Activos</p>
               <p className="mt-2 text-headline-sm text-text-primary">{activeCount}</p>
               <p className="text-body-sm text-text-secondary">disponibles en formularios</p>
             </div>
-            <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+            <div className={ADMIN_INSET_CARD_CLASS_NAME}>
               <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Inactivos</p>
               <p className="mt-2 text-headline-sm text-text-primary">{inactiveCount}</p>
               <p className="text-body-sm text-text-secondary">ocultos para nuevos usos</p>
@@ -202,12 +213,7 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
                     key={preset.id}
                     type="button"
                     onClick={() => startEdit(preset)}
-                    className={cx(
-                      "w-full rounded-2xl border p-4 text-left transition-colors",
-                      isEditing
-                        ? "border-border-brand bg-surface-brandTint shadow-sm"
-                        : "border-border-soft bg-surface-subtle hover:border-border-default hover:bg-surface-canvas",
-                    )}
+                    className={cx(isEditing ? ADMIN_LIST_ITEM_ACTIVE_CLASS_NAME : ADMIN_LIST_ITEM_CLASS_NAME)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-3">
@@ -243,7 +249,7 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
           )}
         </section>
 
-        <aside className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6 xl:sticky xl:top-6 xl:self-start">
+        <aside className={ADMIN_STICKY_PANEL_SURFACE_CLASS_NAME}>
           <div className="flex items-start justify-between gap-4 border-b border-border-soft pb-5">
             <div className="space-y-2">
               <p className="text-caption uppercase tracking-[0.14em] text-text-muted">Editor</p>
@@ -256,7 +262,7 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
             </div>
 
             {(editingPreset || formData.label) ? (
-              <button type="button" onClick={resetForm} className="rounded-xl border border-border-default px-4 py-2 text-label-md text-text-primary">
+              <button type="button" onClick={resetForm} className={ADMIN_BUTTON_NEUTRAL_SMALL_CLASS_NAME}>
                 Limpiar
               </button>
             ) : null}
@@ -268,7 +274,7 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
               <input
                 value={formData.label}
                 onChange={(event) => updateField("label", event.target.value)}
-                className={adminFieldClassName}
+                className={ADMIN_COMPACT_FIELD_CLASS_NAME}
                 placeholder="Nuevo"
               />
             </label>
@@ -291,7 +297,7 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
                   min={0}
                   value={formData.sortOrder}
                   onChange={(event) => updateField("sortOrder", Number(event.target.value))}
-                  className={adminFieldClassName}
+                  className={ADMIN_COMPACT_FIELD_CLASS_NAME}
                 />
               </label>
             </div>
@@ -306,7 +312,7 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
               Preset disponible en formularios de producto
             </label>
 
-            <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+            <div className={ADMIN_INSET_CARD_CLASS_NAME}>
               <p className="text-label-md text-text-primary">Vista previa</p>
               <div className="mt-3 flex items-center gap-3">
                 <ProductBadge label={formData.label.trim() || "Preview"} color={formData.color} />
@@ -318,11 +324,7 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
             {feedbackMessage ? <p className="text-body-sm text-status-success">{feedbackMessage}</p> : null}
 
             <div className="flex flex-wrap items-center gap-3 border-t border-border-soft pt-5">
-              <button
-                type="submit"
-                disabled={submissionState === "saving"}
-                className="inline-flex min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm disabled:opacity-50"
-              >
+              <button type="submit" disabled={submissionState === "saving"} className={ADMIN_BUTTON_PRIMARY_CLASS_NAME}>
                 {submissionState === "saving"
                   ? "Guardando..."
                   : editingPreset
@@ -331,21 +333,13 @@ export function BadgePresetAdminPanel({ initialPresets }: BadgePresetAdminPanelP
               </button>
 
               {(editingPreset || formData.label) ? (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="inline-flex min-h-11 items-center justify-center rounded-pill border border-border-default px-6 py-3 text-label-md text-text-primary"
-                >
+                <button type="button" onClick={resetForm} className={ADMIN_BUTTON_SECONDARY_CLASS_NAME}>
                   Cancelar
                 </button>
               ) : null}
 
               {editingPreset ? (
-                <button
-                  type="button"
-                  onClick={() => handleDelete(editingPreset.id)}
-                  className="inline-flex min-h-11 items-center justify-center rounded-pill border border-status-error/30 px-6 py-3 text-label-md text-status-error"
-                >
+                <button type="button" onClick={() => handleDelete(editingPreset.id)} className={ADMIN_BUTTON_DANGER_CLASS_NAME}>
                   Eliminar preset
                 </button>
               ) : null}

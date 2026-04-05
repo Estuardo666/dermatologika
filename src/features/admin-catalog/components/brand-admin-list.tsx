@@ -1,5 +1,12 @@
 import Link from "next/link";
 
+import {
+  ADMIN_BUTTON_PRIMARY_CLASS_NAME,
+  ADMIN_HERO_SURFACE_CLASS_NAME,
+  ADMIN_INSET_CARD_CLASS_NAME,
+  ADMIN_LIST_ITEM_CLASS_NAME,
+  ADMIN_PANEL_SURFACE_CLASS_NAME,
+} from "@/components/admin/surface-styles";
 import { AdminBreadcrumbs } from "@/components/layout/admin-breadcrumbs";
 import type { AdminBrandItem } from "@/types/admin-catalog";
 
@@ -17,7 +24,7 @@ function formatDate(value: string): string {
 export function BrandAdminList({ brands }: BrandAdminListProps) {
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-6 shadow-xs sm:p-8">
+      <section className={ADMIN_HERO_SURFACE_CLASS_NAME}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <AdminBreadcrumbs
@@ -34,25 +41,25 @@ export function BrandAdminList({ brands }: BrandAdminListProps) {
             </p>
           </div>
 
-          <Link href="/admin/catalog/brands/new" className="inline-flex min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm transition-[background-color] duration-[200ms] ease-soft hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+          <Link href="/admin/catalog/brands/new" className={ADMIN_BUTTON_PRIMARY_CLASS_NAME}>
             Nueva marca
           </Link>
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+      <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+          <div className={ADMIN_INSET_CARD_CLASS_NAME}>
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Total</p>
             <p className="mt-2 text-headline-sm text-text-primary">{brands.length}</p>
             <p className="text-body-sm text-text-secondary">marcas registradas</p>
           </div>
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+          <div className={ADMIN_INSET_CARD_CLASS_NAME}>
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Con imagen</p>
             <p className="mt-2 text-headline-sm text-text-primary">{brands.filter((brand) => brand.mediaAssetId).length}</p>
             <p className="text-body-sm text-text-secondary">listas para el storefront</p>
           </div>
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-4">
+          <div className={ADMIN_INSET_CARD_CLASS_NAME}>
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Vinculadas</p>
             <p className="mt-2 text-headline-sm text-text-primary">{brands.filter((brand) => brand.productCount > 0).length}</p>
             <p className="text-body-sm text-text-secondary">usadas por productos</p>
@@ -65,7 +72,7 @@ export function BrandAdminList({ brands }: BrandAdminListProps) {
               <Link
                 key={brand.id}
                 href={`/admin/catalog/brands/${brand.id}`}
-                className="group rounded-2xl border border-border-soft bg-surface-subtle p-4 transition-[border-color,background-color,box-shadow] duration-[200ms] ease-soft hover:border-border-brand hover:bg-surface-canvas hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
+                className={`group ${ADMIN_LIST_ITEM_CLASS_NAME} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas`}
               >
                 <div className="flex items-start gap-4">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border-soft bg-surface-canvas">

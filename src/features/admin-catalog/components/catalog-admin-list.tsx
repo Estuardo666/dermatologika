@@ -5,6 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 
+import {
+  ADMIN_BUTTON_DANGER_CLASS_NAME,
+  ADMIN_BUTTON_PRIMARY_CLASS_NAME,
+  ADMIN_BUTTON_SECONDARY_CLASS_NAME,
+  ADMIN_HERO_SURFACE_CLASS_NAME,
+  ADMIN_INSET_CARD_CLASS_NAME,
+  ADMIN_PANEL_SURFACE_CLASS_NAME,
+} from "@/components/admin/surface-styles";
 import { AdminBreadcrumbs } from "@/components/layout/admin-breadcrumbs";
 import { SelectionCheckbox } from "@/features/admin-catalog/components/selection-checkbox";
 import { cx } from "@/lib/utils";
@@ -340,8 +348,8 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <section className={ADMIN_HERO_SURFACE_CLASS_NAME}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <AdminBreadcrumbs items={breadcrumbItems} />
             <p className="text-caption uppercase tracking-[0.14em] text-text-muted">
@@ -352,31 +360,31 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
 
           <Link
             href={createHref}
-            className="inline-flex min-h-10 items-center justify-center rounded-2xl bg-ink-900 px-5 py-2.5 text-label-sm text-white shadow-sm transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:bg-ink-700 active:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas sm:min-h-11 sm:px-6 sm:py-3 sm:text-label-md"
+            className={`${ADMIN_BUTTON_PRIMARY_CLASS_NAME} w-full sm:w-auto`}
           >
             {createLabel}
           </Link>
         </div>
       </section>
 
-      <section className="space-y-4 rounded-[28px] border border-border-soft bg-surface-canvas p-4 shadow-xs sm:p-5">
+      <section className={`space-y-4 ${ADMIN_PANEL_SURFACE_CLASS_NAME}`}>
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
+          <div className={ADMIN_INSET_CARD_CLASS_NAME}>
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Total</p>
             <p className="mt-1 text-headline-sm text-text-primary">{libraryData.summary.totalCount}</p>
           </div>
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
+          <div className={ADMIN_INSET_CARD_CLASS_NAME}>
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Activos</p>
             <p className="mt-1 text-headline-sm text-text-primary">{libraryData.summary.activeCount}</p>
           </div>
-          <div className="rounded-2xl border border-border-soft bg-surface-subtle p-3.5">
+          <div className={ADMIN_INSET_CARD_CLASS_NAME}>
             <p className="text-caption uppercase tracking-[0.12em] text-text-muted">Inactivos</p>
             <p className="mt-1 text-headline-sm text-text-primary">{libraryData.summary.inactiveCount}</p>
           </div>
         </div>
 
         <div className="rounded-[24px] border border-border-soft bg-surface-subtle">
-          <div className="flex flex-col gap-4 border-b border-border-soft px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 border-b border-border-soft px-3 py-3.5 sm:px-4 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               {filterOptions.map((option) => {
                 const isActive = libraryData.filters.status === option.value;
@@ -400,7 +408,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
               })}
             </div>
 
-            <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <form onSubmit={handleSearchSubmit} className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center">
               <label className="sr-only" htmlFor={`${section}-search`}>
                 {showCategories ? "Buscar categorias" : "Buscar productos"}
               </label>
@@ -409,7 +417,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                 id={`${section}-search`}
                 name="query"
                 defaultValue={activeQuery}
-                className={`w-full sm:min-w-[240px] ${adminListFieldClassName}`}
+                className={`w-full lg:min-w-[240px] ${adminListFieldClassName}`}
                 placeholder={showCategories ? "Buscar por nombre, slug o href" : "Buscar por nombre, badge, origen o href"}
               />
               {!showCategories && productLibraryData ? (
@@ -422,7 +430,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                   id="products-category-filter"
                   value={activeCategoryId}
                   onChange={(event) => handleCategoryChange(event.target.value)}
-                  className={`w-full sm:min-w-[220px] ${adminListFieldClassName}`}
+                  className={`w-full lg:min-w-[220px] ${adminListFieldClassName}`}
                   disabled={isBusy}
                 >
                   <option value="">Todas las categorias</option>
@@ -436,7 +444,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
               <button
                 type="submit"
                 disabled={isBusy}
-                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-border-default bg-surface-canvas px-4 py-3 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-subtle active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle disabled:opacity-50"
+                className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} w-full sm:w-auto`}
               >
                 {isPending ? "Buscando..." : "Buscar"}
               </button>
@@ -444,14 +452,14 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
           </div>
 
           {selectedCategoryOption || activeQuery ? (
-            <div className="flex flex-wrap items-center gap-3 border-b border-border-soft px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3 border-b border-border-soft px-3 py-3 sm:px-4">
               <span className="text-body-sm text-text-secondary">Filtro activo:</span>
               {selectedCategoryOption ? (
                 <button
                   type="button"
                   onClick={() => handleCategoryChange("")}
                   disabled={isBusy}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border-default bg-surface-canvas px-4 py-2 text-body-sm text-text-primary shadow-sm transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-subtle active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle disabled:opacity-50"
+                  className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} min-h-9 px-4 py-2 text-body-sm`}
                   aria-label={`Quitar filtro de categoria ${selectedCategoryOption.name}`}
                 >
                   <span className="text-text-secondary">Categoria:</span>
@@ -466,7 +474,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                   type="button"
                   onClick={() => navigateWithParams({ query: "", page: 1 })}
                   disabled={isBusy}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border-default bg-surface-canvas px-4 py-2 text-body-sm text-text-primary shadow-sm transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-subtle active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle disabled:opacity-50"
+                  className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} min-h-9 px-4 py-2 text-body-sm`}
                   aria-label={`Quitar busqueda ${activeQuery}`}
                 >
                   <span className="text-text-secondary">Busqueda:</span>
@@ -479,7 +487,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-3 border-b border-border-soft px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 border-b border-border-soft px-3 py-3.5 sm:px-4 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-body-sm text-text-secondary">
                 {selectedCount > 0
@@ -492,7 +500,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                   type="button"
                   onClick={() => void handleBulkAction("activate")}
                   disabled={selectedCount === 0 || isBusy}
-                  className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-border-default bg-surface-canvas px-4 py-2 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-subtle active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle disabled:opacity-50"
+                  className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} w-full flex-1 sm:w-auto sm:flex-none`}
                 >
                   Activar
                 </button>
@@ -500,7 +508,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                   type="button"
                   onClick={() => void handleBulkAction("deactivate")}
                   disabled={selectedCount === 0 || isBusy}
-                  className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-border-default bg-surface-canvas px-4 py-2 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-subtle active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle disabled:opacity-50"
+                  className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} w-full flex-1 sm:w-auto sm:flex-none`}
                 >
                   Desactivar
                 </button>
@@ -508,7 +516,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                   type="button"
                   onClick={() => void handleBulkAction("delete")}
                   disabled={selectedCount === 0 || isBusy}
-                  className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-status-error/40 bg-status-error/10 px-4 py-2 text-label-md text-status-error transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-status-error/60 hover:bg-status-error/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle disabled:opacity-50"
+                  className={`${ADMIN_BUTTON_DANGER_CLASS_NAME} w-full flex-1 sm:w-auto sm:flex-none`}
                 >
                   Eliminar
                 </button>
@@ -528,52 +536,38 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
             ) : null}
           </div>
 
-          <div className="overflow-x-auto">
+          <div>
             {libraryData.items.length === 0 ? (
-              <div className="px-4 py-10 text-body-sm text-text-secondary">
+              <div className="px-3 py-10 text-body-sm text-text-secondary sm:px-4">
                 No hay resultados para los filtros actuales.
               </div>
             ) : (
-              <table className="min-w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-border-soft text-caption uppercase tracking-[0.12em] text-text-muted">
-                    <th className="px-4 py-3 font-medium">
-                      <BulkSelectionCheckbox
-                        checked={allRowsSelected}
-                        onChange={handleToggleAllRows}
-                        disabled={currentRowIds.length === 0 || isBusy}
-                        srLabel="Seleccionar todas las filas visibles"
-                      />
-                    </th>
-                    {renderSortHeader("name", showCategories ? "Categoria" : "Producto")}
-                    {renderSortHeader("slug", "Slug")}
-                    {renderSortHeader("status", "Estado")}
-                    {!showCategories ? renderSortHeader("category", "Categoria") : null}
-                    {!showCategories ? <th className="px-4 py-3 font-medium">Precio</th> : null}
-                    {!showCategories ? <th className="px-4 py-3 font-medium">Stock</th> : null}
-                    {!showCategories ? <th className="px-4 py-3 font-medium">Origen</th> : null}
-                    {renderSortHeader("updatedAt", "Actualizado")}
-                    <th className="px-4 py-3 font-medium text-right">Accion</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                <div className="space-y-3 px-3 py-3 md:hidden">
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-border-soft bg-surface-canvas px-3.5 py-3">
+                    <p className="text-body-sm text-text-secondary">Selecciona visibles para acciones masivas.</p>
+                    <button
+                      type="button"
+                      onClick={handleToggleAllRows}
+                      disabled={currentRowIds.length === 0 || isBusy}
+                      className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} min-h-9 px-3.5 py-2 text-body-sm`}
+                    >
+                      {allRowsSelected ? "Quitar todo" : "Seleccionar todo"}
+                    </button>
+                  </div>
+
                   {showCategories
                     ? categoryItems.map((category) => (
-                        <tr
-                          key={category.id}
-                          className="border-b border-border-soft/80 bg-surface-canvas transition-colors hover:bg-surface-subtle/60"
-                        >
-                          <td className="px-4 py-4 align-top">
-                            <BulkSelectionCheckbox
-                              checked={selectedIds.includes(category.id)}
-                              onChange={() => handleToggleRow(category.id)}
-                              disabled={isBusy}
-                              srLabel={`Seleccionar categoria ${category.name}`}
-                            />
-                          </td>
-                          <td className="px-4 py-4 align-top">
-                            <div className="flex items-start gap-3">
-                              <div className="relative aspect-square w-11 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-surface-subtle">
+                        <article key={category.id} className="rounded-2xl border border-border-soft bg-surface-canvas p-4 shadow-[0_14px_28px_-24px_rgba(28,56,41,0.25)]">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <BulkSelectionCheckbox
+                                checked={selectedIds.includes(category.id)}
+                                onChange={() => handleToggleRow(category.id)}
+                                disabled={isBusy}
+                                srLabel={`Seleccionar categoria ${category.name}`}
+                              />
+                              <div className="relative mt-0.5 aspect-square w-11 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-surface-subtle">
                                 {category.mediaAssetPublicUrl ? (
                                   <Image
                                     src={category.mediaAssetPublicUrl}
@@ -588,19 +582,17 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                                   </div>
                                 )}
                               </div>
-                              <div className="min-w-0 space-y-1">
+                              <div className="min-w-0 space-y-1.5">
                                 <Link
                                   href={`/admin/catalog/categories/${category.id}`}
-                                  className="rounded-lg px-1 py-0.5 text-label-md text-text-primary transition-[color,background-color,border-color] duration-[200ms] ease-soft hover:bg-surface-subtle hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
+                                  className="block rounded-lg px-1 py-0.5 text-label-md text-text-primary transition-[color,background-color,border-color] duration-[200ms] ease-soft hover:bg-surface-subtle hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
                                 >
                                   {category.name}
                                 </Link>
                                 <p className="line-clamp-2 text-body-sm text-text-secondary">{category.description}</p>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">{category.slug}</td>
-                          <td className="px-4 py-4 align-top">
+
                             <span
                               className={cx(
                                 "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
@@ -609,36 +601,37 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                             >
                               {category.isActive ? "Activa" : "Inactiva"}
                             </span>
-                          </td>
-                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
-                            {formatDate(category.updatedAt)}
-                          </td>
-                          <td className="px-4 py-4 text-right align-top">
-                            <Link
-                              href={`/admin/catalog/categories/${category.id}`}
-                              className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-border-default bg-surface-canvas px-4 py-2 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-soft active:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
-                            >
+                          </div>
+
+                          <dl className="mt-4 grid gap-2 text-body-sm text-text-secondary sm:grid-cols-2">
+                            <div>
+                              <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Slug</dt>
+                              <dd className="mt-1 break-all">{category.slug}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Actualizado</dt>
+                              <dd className="mt-1">{formatDate(category.updatedAt)}</dd>
+                            </div>
+                          </dl>
+
+                          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                            <Link href={`/admin/catalog/categories/${category.id}`} className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} w-full sm:w-auto`}>
                               Editar
                             </Link>
-                          </td>
-                        </tr>
+                          </div>
+                        </article>
                       ))
                     : productItems.map((product) => (
-                        <tr
-                          key={product.id}
-                          className="border-b border-border-soft/80 bg-surface-canvas transition-colors hover:bg-surface-subtle/60"
-                        >
-                          <td className="px-4 py-4 align-top">
-                            <BulkSelectionCheckbox
-                              checked={selectedIds.includes(product.id)}
-                              onChange={() => handleToggleRow(product.id)}
-                              disabled={isBusy}
-                              srLabel={`Seleccionar producto ${product.name}`}
-                            />
-                          </td>
-                          <td className="px-4 py-4 align-top">
-                            <div className="flex items-start gap-3">
-                              <div className="relative aspect-square w-11 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-surface-subtle">
+                        <article key={product.id} className="rounded-2xl border border-border-soft bg-surface-canvas p-4 shadow-[0_14px_28px_-24px_rgba(28,56,41,0.25)]">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <BulkSelectionCheckbox
+                                checked={selectedIds.includes(product.id)}
+                                onChange={() => handleToggleRow(product.id)}
+                                disabled={isBusy}
+                                srLabel={`Seleccionar producto ${product.name}`}
+                              />
+                              <div className="relative mt-0.5 aspect-square w-11 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-surface-subtle">
                                 {product.mediaAssetPublicUrl ? (
                                   <Image
                                     src={product.mediaAssetPublicUrl}
@@ -653,30 +646,17 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                                   </div>
                                 )}
                               </div>
-                              <div className="min-w-0 space-y-1">
+                              <div className="min-w-0 space-y-1.5">
                                 <Link
                                   href={`/admin/catalog/products/${product.id}`}
-                                  className="rounded-lg px-1 py-0.5 text-label-md text-text-primary transition-[color,background-color,border-color] duration-[200ms] ease-soft hover:bg-surface-subtle hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
+                                  className="block rounded-lg px-1 py-0.5 text-label-md text-text-primary transition-[color,background-color,border-color] duration-[200ms] ease-soft hover:bg-surface-subtle hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
                                 >
                                   {product.name}
                                 </Link>
                                 <p className="text-body-sm text-text-secondary">{product.brand}</p>
-                                <div className="flex flex-wrap items-center gap-2 pt-1">
-                                  <span
-                                    className={cx(
-                                      "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
-                                      getProductSyncLabel(product).tone,
-                                    )}
-                                  >
-                                    {getProductSyncLabel(product).label}
-                                  </span>
-                                  <span className="text-caption text-text-muted">{getProductSyncLabel(product).detail}</span>
-                                </div>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">{product.slug}</td>
-                          <td className="px-4 py-4 align-top">
+
                             <span
                               className={cx(
                                 "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
@@ -685,55 +665,251 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                             >
                               {product.isActive ? "Activo" : "Inactivo"}
                             </span>
-                          </td>
-                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
-                            {product.categoryNames.join(", ") || product.categoryName || "Sin categoria"}
-                          </td>
-                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
-                            <div className="space-y-1">
-                              <p className="font-medium text-text-primary">{formatCurrency(product.price)}</p>
-                              <p>
-                                {product.discountPrice === null
-                                  ? "Sin oferta"
-                                  : `Oferta: ${formatCurrency(product.discountPrice)}`}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
-                            <span
-                              className={cx(
-                                "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
-                                product.stock > 0 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-700",
-                              )}
-                            >
-                              {product.stock > 0 ? `${product.stock} disponibles` : "Sin stock"}
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className={cx("inline-flex rounded-full px-2.5 py-0.5 text-label-sm", getProductSyncLabel(product).tone)}>
+                              {getProductSyncLabel(product).label}
                             </span>
-                          </td>
-                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
-                            <div className="space-y-1">
-                              <p className="font-medium text-text-primary">{product.externalSourceId ?? "Local"}</p>
-                              <p>v{product.syncVersion}</p>
+                            <span className="text-caption text-text-muted">{getProductSyncLabel(product).detail}</span>
+                          </div>
+
+                          <dl className="mt-4 grid gap-3 text-body-sm text-text-secondary sm:grid-cols-2">
+                            <div>
+                              <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Categorías</dt>
+                              <dd className="mt-1">{product.categoryNames.join(", ") || product.categoryName || "Sin categoria"}</dd>
                             </div>
-                          </td>
-                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
-                            {formatDate(product.updatedAt)}
-                          </td>
-                          <td className="px-4 py-4 text-right align-top">
-                            <Link
-                              href={`/admin/catalog/products/${product.id}`}
-                              className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-border-default bg-surface-canvas px-4 py-2 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-soft active:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
-                            >
+                            <div>
+                              <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Precio</dt>
+                              <dd className="mt-1 space-y-1">
+                                <p className="font-medium text-text-primary">{formatCurrency(product.price)}</p>
+                                <p>{product.discountPrice === null ? "Sin oferta" : `Oferta: ${formatCurrency(product.discountPrice)}`}</p>
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Stock</dt>
+                              <dd className="mt-1">
+                                <span
+                                  className={cx(
+                                    "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
+                                    product.stock > 0 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-700",
+                                  )}
+                                >
+                                  {product.stock}
+                                </span>
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Actualizado</dt>
+                              <dd className="mt-1">{formatDate(product.updatedAt)}</dd>
+                            </div>
+                          </dl>
+
+                          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                            <Link href={`/admin/catalog/products/${product.id}`} className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} w-full sm:w-auto`}>
                               Editar
                             </Link>
-                          </td>
-                        </tr>
+                          </div>
+                        </article>
                       ))}
-                </tbody>
-              </table>
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="min-w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-border-soft text-caption uppercase tracking-[0.12em] text-text-muted">
+                        <th className="px-4 py-3 font-medium">
+                          <BulkSelectionCheckbox
+                            checked={allRowsSelected}
+                            onChange={handleToggleAllRows}
+                            disabled={currentRowIds.length === 0 || isBusy}
+                            srLabel="Seleccionar todas las filas visibles"
+                          />
+                        </th>
+                        {renderSortHeader("name", showCategories ? "Categoria" : "Producto")}
+                        {showCategories ? renderSortHeader("slug", "Slug") : null}
+                        {renderSortHeader("status", "Estado")}
+                        {!showCategories ? renderSortHeader("category", "Categoria") : null}
+                        {!showCategories ? <th className="px-4 py-3 font-medium">Precio</th> : null}
+                        {!showCategories ? <th className="px-4 py-3 font-medium">Stock</th> : null}
+                        {!showCategories ? <th className="px-4 py-3 font-medium">Origen</th> : null}
+                        {renderSortHeader("updatedAt", "Actualizado")}
+                        <th className="px-4 py-3 font-medium text-right">Accion</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {showCategories
+                        ? categoryItems.map((category) => (
+                            <tr
+                              key={category.id}
+                              className="border-b border-border-soft/80 bg-surface-canvas transition-colors hover:bg-surface-subtle/60"
+                            >
+                              <td className="px-4 py-4 align-top">
+                                <BulkSelectionCheckbox
+                                  checked={selectedIds.includes(category.id)}
+                                  onChange={() => handleToggleRow(category.id)}
+                                  disabled={isBusy}
+                                  srLabel={`Seleccionar categoria ${category.name}`}
+                                />
+                              </td>
+                              <td className="px-4 py-4 align-top">
+                                <div className="flex items-start gap-3">
+                                  <div className="relative aspect-square w-11 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-surface-subtle">
+                                    {category.mediaAssetPublicUrl ? (
+                                      <Image
+                                        src={category.mediaAssetPublicUrl}
+                                        alt={category.mediaAssetAltText || category.name}
+                                        fill
+                                        sizes="48px"
+                                        className="object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-full w-full items-center justify-center text-label-md text-text-muted">
+                                        {buildThumbnailFallback(category.name)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 space-y-1">
+                                    <Link
+                                      href={`/admin/catalog/categories/${category.id}`}
+                                      className="rounded-lg px-1 py-0.5 text-label-md text-text-primary transition-[color,background-color,border-color] duration-[200ms] ease-soft hover:bg-surface-subtle hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
+                                    >
+                                      {category.name}
+                                    </Link>
+                                    <p className="line-clamp-2 text-body-sm text-text-secondary">{category.description}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 align-top text-body-sm text-text-secondary">{category.slug}</td>
+                              <td className="px-4 py-4 align-top">
+                                <span
+                                  className={cx(
+                                    "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
+                                    category.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700",
+                                  )}
+                                >
+                                  {category.isActive ? "Activa" : "Inactiva"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                                {formatDate(category.updatedAt)}
+                              </td>
+                              <td className="px-4 py-4 text-right align-top">
+                                <Link href={`/admin/catalog/categories/${category.id}`} className={ADMIN_BUTTON_SECONDARY_CLASS_NAME}>
+                                  Editar
+                                </Link>
+                              </td>
+                            </tr>
+                          ))
+                        : productItems.map((product) => (
+                            <tr
+                              key={product.id}
+                              className="border-b border-border-soft/80 bg-surface-canvas transition-colors hover:bg-surface-subtle/60"
+                            >
+                              <td className="px-4 py-4 align-top">
+                                <BulkSelectionCheckbox
+                                  checked={selectedIds.includes(product.id)}
+                                  onChange={() => handleToggleRow(product.id)}
+                                  disabled={isBusy}
+                                  srLabel={`Seleccionar producto ${product.name}`}
+                                />
+                              </td>
+                              <td className="px-4 py-4 align-top">
+                                <div className="flex items-start gap-3">
+                                  <div className="relative aspect-square w-11 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-surface-subtle">
+                                    {product.mediaAssetPublicUrl ? (
+                                      <Image
+                                        src={product.mediaAssetPublicUrl}
+                                        alt={product.mediaAssetAltText || product.name}
+                                        fill
+                                        sizes="48px"
+                                        className="object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-full w-full items-center justify-center text-label-md text-text-muted">
+                                        {buildThumbnailFallback(product.name)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 space-y-1">
+                                    <Link
+                                      href={`/admin/catalog/products/${product.id}`}
+                                      className="rounded-lg px-1 py-0.5 text-label-md text-text-primary transition-[color,background-color,border-color] duration-[200ms] ease-soft hover:bg-surface-subtle hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
+                                    >
+                                      {product.name}
+                                    </Link>
+                                    <p className="text-body-sm text-text-secondary">{product.brand}</p>
+                                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                                      <span
+                                        className={cx(
+                                          "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
+                                          getProductSyncLabel(product).tone,
+                                        )}
+                                      >
+                                        {getProductSyncLabel(product).label}
+                                      </span>
+                                      <span className="text-caption text-text-muted">{getProductSyncLabel(product).detail}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 align-top">
+                                <span
+                                  className={cx(
+                                    "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
+                                    product.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700",
+                                  )}
+                                >
+                                  {product.isActive ? "Activo" : "Inactivo"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                                {product.categoryNames.join(", ") || product.categoryName || "Sin categoria"}
+                              </td>
+                              <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                                <div className="space-y-1">
+                                  <p className="font-medium text-text-primary">{formatCurrency(product.price)}</p>
+                                  <p>
+                                    {product.discountPrice === null
+                                      ? "Sin oferta"
+                                      : `Oferta: ${formatCurrency(product.discountPrice)}`}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                                <span
+                                  className={cx(
+                                    "inline-flex rounded-full px-2.5 py-0.5 text-label-sm",
+                                    product.stock > 0 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-700",
+                                  )}
+                                >
+                                  {product.stock}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                                <div className="space-y-1">
+                                  <p className="font-medium text-text-primary">{product.externalSourceId ?? "Local"}</p>
+                                  <p>v{product.syncVersion}</p>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                                {formatDate(product.updatedAt)}
+                              </td>
+                              <td className="px-4 py-4 text-right align-top">
+                                <Link href={`/admin/catalog/products/${product.id}`} className={ADMIN_BUTTON_SECONDARY_CLASS_NAME}>
+                                  Editar
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-border-soft px-4 py-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 border-t border-border-soft px-3 py-3.5 sm:px-4 sm:py-4 md:flex-row md:items-center md:justify-between">
             <p className="text-body-sm text-text-secondary">
               Mostrando {libraryData.items.length} de {libraryData.pagination.totalItems} {showCategories ? "categorias" : "productos"}.
             </p>
@@ -743,7 +919,7 @@ export function CatalogAdminList({ libraryData, section }: CatalogAdminListProps
                 type="button"
                 disabled={!libraryData.pagination.hasPreviousPage || isBusy}
                 onClick={() => handlePageChange(currentPage - 1)}
-                className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-border-default bg-surface-canvas px-4 py-2 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-soft active:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas disabled:opacity-50"
+                className={ADMIN_BUTTON_SECONDARY_CLASS_NAME}
               >
                 Anterior
               </button>

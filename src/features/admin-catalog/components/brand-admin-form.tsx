@@ -4,6 +4,18 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
+import {
+  ADMIN_COMPACT_FIELD_CLASS_NAME,
+  ADMIN_COMPACT_PROMINENT_FIELD_CLASS_NAME,
+} from "@/components/admin/form-styles";
+import {
+  ADMIN_BUTTON_DANGER_CLASS_NAME,
+  ADMIN_BUTTON_PRIMARY_CLASS_NAME,
+  ADMIN_BUTTON_SECONDARY_CLASS_NAME,
+  ADMIN_HERO_SURFACE_CLASS_NAME,
+  ADMIN_INSET_CARD_CLASS_NAME,
+  ADMIN_PANEL_SURFACE_CLASS_NAME,
+} from "@/components/admin/surface-styles";
 import { AdminBreadcrumbs } from "@/components/layout/admin-breadcrumbs";
 import { MediaAssetFrame } from "@/components/media/media-asset-frame";
 import { cx } from "@/lib/utils";
@@ -104,8 +116,6 @@ function formatDate(value: string): string {
     timeStyle: "short",
   }).format(new Date(value));
 }
-
-const adminFieldClassName = "w-full rounded-xl border border-[#c0d4be] bg-[#f8fbf7] px-4 py-3 text-body-md text-text-primary transition-[border-color,box-shadow,background-color] duration-[200ms] ease-soft hover:border-brand-primary hover:bg-[#fbfdfb] active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle";
 
 export function BrandAdminForm({ initialData, mode, brand }: BrandAdminFormProps) {
   const router = useRouter();
@@ -266,7 +276,7 @@ export function BrandAdminForm({ initialData, mode, brand }: BrandAdminFormProps
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-6 shadow-xs sm:p-8">
+      <section className={ADMIN_HERO_SURFACE_CLASS_NAME}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <AdminBreadcrumbs
@@ -298,18 +308,18 @@ export function BrandAdminForm({ initialData, mode, brand }: BrandAdminFormProps
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_320px]">
-        <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+        <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
           <form id="brand-form" onSubmit={handleSubmit} className="space-y-6">
             <label className="space-y-2 block">
               <span className="block text-label-md text-text-primary">Nombre</span>
-              <input value={formData.name} onChange={(event) => updateField("name", event.target.value)} className={`${adminFieldClassName} rounded-2xl text-section-md font-semibold sm:py-4 sm:text-section-lg`} placeholder="ISDIN" />
+              <input value={formData.name} onChange={(event) => updateField("name", event.target.value)} className={ADMIN_COMPACT_PROMINENT_FIELD_CLASS_NAME} placeholder="ISDIN" />
             </label>
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
-              <div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+              <div className={`space-y-3 ${ADMIN_INSET_CARD_CLASS_NAME}`}>
                 <div className="space-y-2">
                   <span className="block text-label-md text-text-primary">Imagen de marca</span>
-                  <input key={fileInputKey} type="file" accept="image/*" onChange={(event) => handleImageChange(event.target.files?.[0] ?? null)} className={adminFieldClassName} />
+                  <input key={fileInputKey} type="file" accept="image/*" onChange={(event) => handleImageChange(event.target.files?.[0] ?? null)} className={ADMIN_COMPACT_FIELD_CLASS_NAME} />
                 </div>
 
                 <p className="text-body-sm text-text-secondary">
@@ -332,7 +342,7 @@ export function BrandAdminForm({ initialData, mode, brand }: BrandAdminFormProps
         </section>
 
         <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
-          <section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+          <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
             <h2 className="text-section-lg text-text-primary">Estado de la ficha</h2>
             
             <div className="mt-5 space-y-2 text-body-sm leading-relaxed">
@@ -356,16 +366,16 @@ export function BrandAdminForm({ initialData, mode, brand }: BrandAdminFormProps
 
             <div className="mt-5 space-y-2 border-t border-border-soft pt-5">
               {errorMessage ? <p className="mb-2 text-body-sm text-status-error">{errorMessage}</p> : null}
-              <button type="submit" form="brand-form" disabled={submissionState === "saving"} className="inline-flex w-full min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:bg-emerald-600 active:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas disabled:opacity-50">
+              <button type="submit" form="brand-form" disabled={submissionState === "saving"} className={`w-full ${ADMIN_BUTTON_PRIMARY_CLASS_NAME}`}>
                 {submissionState === "saving" ? "Guardando..." : mode === "edit" ? "Actualizar marca" : "Crear marca"}
               </button>
 
-              <Link href="/admin/catalog/brands" className="inline-flex w-full min-h-11 items-center justify-center rounded-pill border border-border-default bg-surface-canvas px-6 py-3 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-soft active:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+              <Link href="/admin/catalog/brands" className={`w-full ${ADMIN_BUTTON_SECONDARY_CLASS_NAME}`}>
                 Cancelar
               </Link>
 
               {mode === "edit" && brand ? (
-                <button type="button" onClick={handleDelete} className="inline-flex w-full min-h-11 items-center justify-center rounded-pill border border-status-error/30 px-6 py-3 text-label-md text-status-error transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-status-error/50 hover:bg-status-error/10 active:bg-status-error/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+                <button type="button" onClick={handleDelete} className={`w-full ${ADMIN_BUTTON_DANGER_CLASS_NAME}`}>
                   Eliminar marca
                 </button>
               ) : null}

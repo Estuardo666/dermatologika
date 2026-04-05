@@ -533,3 +533,15 @@ However, the external API will remain the operational source of truth for dynami
 Synchronization logic must update local records from the external source on a controlled schedule or through dedicated sync processes.
 The frontend should consume internal backend contracts, not call the external product API directly.
 
+
+## SOLID Principles Are Mandatory
+
+All code must respect SOLID principles.
+
+* Single Responsibility: each unit must have one clear responsibility.
+* Open/Closed: prefer extension and composition over risky modification of stable code.
+* Liskov Substitution: specialized implementations must preserve expected contracts and behavior.
+* Interface Segregation: use small, focused interfaces and avoid bloated props or DTOs.
+* Dependency Inversion: prefer stable contracts and clear boundaries over direct coupling to low-level details.
+
+If a change violates SOLID and makes the system harder to reason about, harder to extend, or harder to test, it is not an acceptable implementation.

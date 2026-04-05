@@ -228,6 +228,17 @@ export function PublicProductDetailView({ data }: PublicProductDetailViewProps) 
               </div>
             ) : null}
 
+            {product.activePromotion ? (
+              <div className="inline-flex w-fit max-w-full flex-wrap items-center gap-1.5 rounded-lg border border-dashed border-emerald-200/80 bg-emerald-50/35 px-2.5 py-1.5 text-[0.78rem] text-emerald-900">
+                <span className="inline-flex items-center rounded-full border border-emerald-200/90 bg-white/85 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-emerald-800">
+                  {product.activePromotion.shortLabel}
+                </span>
+                <p className="leading-relaxed text-emerald-900/85">
+                  Oferta activa: <span className="font-semibold">{product.activePromotion.fullLabel}</span>
+                </p>
+              </div>
+            ) : null}
+
             {/* Name + Brand */}
             <div className="space-y-3">
               <h1 className="text-headline-md leading-tight text-text-primary sm:text-headline-lg">

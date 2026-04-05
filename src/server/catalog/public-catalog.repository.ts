@@ -232,6 +232,11 @@ const publicCategoryInclude = {
 } satisfies Prisma.CategoryInclude;
 
 const publicProductInclude = {
+  brandRecord: {
+    select: {
+      id: true,
+    },
+  },
   category: {
     select: {
       id: true,

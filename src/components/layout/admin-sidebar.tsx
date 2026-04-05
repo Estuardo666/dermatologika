@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ADMIN_PANEL_SURFACE_CLASS_NAME } from "@/components/admin/surface-styles";
 import { cx } from "@/lib/utils";
 import { motionTokens } from "@/motion/tokens";
 
@@ -54,6 +55,11 @@ const catalogNavigation: ReadonlyArray<NavigationItem> = [
     href: "/admin/catalog/badges",
     label: "Badges",
     icon: TagIcon,
+  },
+  {
+    href: "/admin/catalog/promotions",
+    label: "Promociones",
+    icon: PromotionIcon,
   },
 ] as const;
 
@@ -228,7 +234,7 @@ function NavigationLink(props: NavigationItem & {
   const linkClasses = cx(
     props.compact
       ? "group flex h-12 w-12 items-center justify-center rounded-2xl border transition-[background-color,border-color,color,transform] duration-[200ms] ease-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
-      : "group flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-[background-color,border-color,color,transform] duration-[200ms] ease-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas",
+      : "group flex min-h-[3.25rem] items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-[background-color,border-color,color,transform] duration-[200ms] ease-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas sm:min-h-14 sm:px-4",
     isActive
       ? "border-border-brand bg-surface-brandTint text-text-primary shadow-sm"
       : "border-border-soft bg-surface-canvas text-text-secondary hover:border-border-default hover:bg-surface-subtle hover:text-text-primary",
@@ -313,7 +319,7 @@ export function AdminSidebar({ userEmail, userRole }: AdminSidebarProps) {
   return (
     <>
       <aside className="w-full shrink-0 lg:hidden">
-        <div className="flex items-center justify-between gap-3 rounded-[28px] border border-border-soft bg-surface-canvas px-4 py-3 shadow-xs">
+        <div className={`flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4 sm:py-3 ${ADMIN_PANEL_SURFACE_CLASS_NAME}`}>
           <div className="min-w-0">
             <p className="truncate text-label-md text-text-primary">{activeItem?.label ?? "Dermatologika"}</p>
           </div>
@@ -351,7 +357,7 @@ export function AdminSidebar({ userEmail, userRole }: AdminSidebarProps) {
               animate="animate"
               exit="exit"
               variants={mobileDrawerReveal}
-              className="fixed inset-y-4 left-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[32px] border border-border-soft bg-surface-canvas shadow-xl lg:hidden"
+              className="fixed inset-y-3 left-3 z-50 flex w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[28px] border border-[#d9e5d5] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,250,245,0.98))] shadow-[0_28px_60px_-32px_rgba(28,56,41,0.38)] sm:inset-y-4 sm:left-4 sm:w-[min(22rem,calc(100vw-2rem))] sm:rounded-[30px] lg:hidden"
             >
               <SidebarPanel
                 pathname={pathname}
@@ -396,7 +402,7 @@ export function AdminSidebar({ userEmail, userRole }: AdminSidebarProps) {
                     duration: sidebarContentDuration,
                     ease: sidebarEaseEnter,
                   }}
-              className="flex w-full flex-col items-center gap-4 rounded-[30px] border border-border-soft bg-surface-canvas px-3 py-4 shadow-xs"
+              className="flex w-full flex-col items-center gap-3 rounded-[28px] border border-[#d9e5d5] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,250,246,0.98))] px-3 py-3 shadow-[0_20px_44px_-34px_rgba(28,56,41,0.34)]"
             >
               <button
                 type="button"
@@ -492,8 +498,8 @@ function SidebarPanel(props: {
   collapseLabel: string;
 }) {
   return (
-    <div className="flex h-full w-full flex-col rounded-[32px] border border-border-soft bg-surface-canvas p-5 shadow-xs">
-      <div className="flex items-start justify-between gap-3 border-b border-border-soft pb-4">
+    <div className="flex h-full w-full flex-col rounded-[28px] border border-[#d9e5d5] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,250,246,0.98))] p-3.5 shadow-[0_24px_52px_-36px_rgba(28,56,41,0.36)] sm:rounded-[30px] sm:p-4">
+      <div className="flex items-start justify-between gap-3 border-b border-border-soft pb-3.5 sm:pb-4">
         <div className="space-y-3">
           <Image
             src="/logotipo.png"
@@ -520,7 +526,7 @@ function SidebarPanel(props: {
         initial={props.reduceMotion ? false : "initial"}
         animate="animate"
         variants={navListReveal}
-        className="mt-5 flex-1 space-y-4"
+        className="mt-4 flex-1 space-y-3.5 sm:mt-5 sm:space-y-4"
       >
         {navigationSections.map((section) => {
           const sectionActive = isSectionActive(props.pathname, section.items);
@@ -531,9 +537,9 @@ function SidebarPanel(props: {
               key={section.id}
               variants={navItemReveal}
               className={cx(
-                "rounded-[26px] border p-3 transition-[background-color,border-color] duration-[200ms] ease-soft",
+                "rounded-[22px] border p-2.5 transition-[background-color,border-color,box-shadow] duration-[200ms] ease-soft sm:rounded-[24px] sm:p-3",
                 sectionActive
-                  ? "border-border-brand bg-surface-brandTint/60"
+                  ? "border-border-brand bg-surface-brandTint/60 shadow-[0_16px_34px_-28px_rgba(32,92,76,0.4)]"
                   : "border-border-soft bg-surface-subtle",
               )}
             >
@@ -580,7 +586,7 @@ function SidebarPanel(props: {
         })}
       </motion.nav>
 
-      <div className="mt-5 flex items-center gap-3 rounded-[24px] border border-border-soft bg-surface-subtle p-3">
+      <div className="mt-4 flex items-center gap-3 rounded-[22px] border border-border-soft bg-surface-subtle p-3 sm:mt-5 sm:rounded-[24px]">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-soft bg-surface-canvas text-label-md text-text-primary">
           {props.userEmail.slice(0, 1).toUpperCase()}
         </div>
@@ -684,6 +690,26 @@ function TagIcon(props: { className?: string }) {
     >
       <path d="M20 10.5 13 3.5H5v8l7 7 8-8Z" />
       <circle cx="8.5" cy="8.5" r="1.25" />
+    </svg>
+  );
+}
+
+function PromotionIcon(props: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={props.className}
+      aria-hidden="true"
+    >
+      <path d="M7 6.5H17" />
+      <path d="M7 12H17" />
+      <path d="M7 17.5H13" />
+      <path d="M4.5 4.5H19.5V19.5H4.5Z" />
     </svg>
   );
 }

@@ -3,9 +3,11 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { X, Trash2, Minus, Plus, ShoppingBag, ShieldCheck, Truck } from "lucide-react";
+import { X, Trash2, Minus, Plus, ShoppingBag, ShieldCheck, Tag, Truck } from "lucide-react";
 
 import { motionTokens } from "@/motion/tokens";
+import { useCheckoutPricingPreview } from "@/features/checkout/hooks/use-checkout-pricing-preview";
+import type { CheckoutPricingLine } from "@/types/checkout-pricing";
 import { useCart } from "../context/cart-context";
 import type { CartItem } from "../types";
 
@@ -19,9 +21,16 @@ const priceFormatter = new Intl.NumberFormat("es-MX", {
 
 // ─── Cart item row ────────────────────────────────────────────────────────────
 
-function CartItemRow({ item }: { item: CartItem }) {
+function CartItemRow({ item, pricingLine, isPricingPending }: {
+  item: CartItem;
+  pricingLine: CheckoutPricingLine | null;
+  isPricingPending: boolean;
+}) {
   const { removeItem, updateQuantity } = useCart();
   const unitPrice = item.discountPrice ?? item.price ?? 0;
+  const baseSubtotal = unitPrice * item.quantity;
+  const finalSubtotal = pricingLine?.finalSubtotal ?? baseSubtotal;
+  const hasPromotionDiscount = (pricingLine?.discountTotal ?? 0) > 0;
 
   return (
     <div className="flex items-start gap-3 py-4">
@@ -82,9 +91,22 @@ function CartItemRow({ item }: { item: CartItem }) {
 
       {/* Price + delete */}
       <div className="flex shrink-0 flex-col items-end gap-3">
-        <span className="text-label-md font-semibold tabular-nums text-text-primary">
-          {priceFormatter.format(unitPrice * item.quantity)}
-        </span>
+        <div className="text-right">
+          {isPricingPending && pricingLine === null ? (
+            <span className="block text-[0.72rem] text-text-muted">Calculando...</span>
+          ) : (
+            <>
+              {hasPromotionDiscount ? (
+                <span className="block text-[0.72rem] tabular-nums text-text-muted line-through">
+                  {priceFormatter.format(baseSubtotal)}
+                </span>
+              ) : null}
+              <span className="text-label-md font-semibold tabular-nums text-text-primary">
+                {priceFormatter.format(finalSubtotal)}
+              </span>
+            </>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => removeItem(item.id)}
@@ -154,6 +176,19 @@ export function CartSidebar() {
   const reduceMotion = useReducedMotion() ?? false;
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const { preview: pricingPreview, isLoading: isPricingPreviewLoading } = useCheckoutPricingPreview({
+    items,
+    shippingMethod: "standard",
+    enabled: isOpen,
+  });
+  const activePromotionLabels = [...new Set(
+    pricingPreview?.appliedPromotions.map((promotion) => promotion.shortLabel).filter(Boolean) ?? [],
+  )];
+  const linePreviewById = new Map(pricingPreview?.lines.map((line) => [line.productId, line]) ?? []);
+  const discountedSubtotal = pricingPreview
+    ? pricingPreview.lines.reduce((sum, line) => sum + line.finalSubtotal, 0)
+    : subtotal;
+  const showSubtotalPending = isPricingPreviewLoading && pricingPreview === null;
 
   // Close on Escape key
   useEffect(() => {
@@ -204,7 +239,7 @@ export function CartSidebar() {
             role="dialog"
             aria-modal="true"
             aria-label="Carrito de compras"
-            className="fixed bottom-3 right-3 top-3 z-modal flex w-[calc(100%-24px)] max-w-sm flex-col overflow-hidden rounded-2xl bg-surface-canvas shadow-lg"
+            className="fixed inset-y-3 left-3 right-3 z-modal flex flex-col overflow-x-hidden overflow-y-hidden rounded-2xl bg-surface-canvas shadow-lg sm:left-auto sm:w-[22rem]"
             initial={motionConfig.panelInitial}
             animate={motionConfig.panelAnimate}
             exit={motionConfig.panelExit}
@@ -234,7 +269,7 @@ export function CartSidebar() {
             </div>
 
             {/* Items — scrollable */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-5">
+            <div className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5">
               {items.length === 0 ? (
                 <EmptyCartState />
               ) : (
@@ -246,6 +281,7 @@ export function CartSidebar() {
                         <motion.li
                           key={item.id}
                           layout
+                          className="min-w-0"
                           {...(isNewItem
                             ? {
                                 initial: { opacity: 0 },
@@ -272,7 +308,11 @@ export function CartSidebar() {
                                 exit: "exit",
                               })}
                         >
-                          <CartItemRow item={item} />
+                          <CartItemRow
+                            item={item}
+                            pricingLine={linePreviewById.get(item.id) ?? null}
+                            isPricingPending={isPricingPreviewLoading}
+                          />
                         </motion.li>
                       );
                     })}
@@ -284,12 +324,37 @@ export function CartSidebar() {
             {/* Footer */}
             {items.length > 0 && (
               <div className="shrink-0 border-t border-border-soft bg-surface-canvas p-5 pb-safe-bottom">
+                {isPricingPreviewLoading ? (
+                  <div className="mb-3 flex items-center gap-2 text-[0.72rem] text-text-muted">
+                    <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span>Validando promociones activas...</span>
+                  </div>
+                ) : activePromotionLabels.length > 0 ? (
+                  <div className="mb-3 flex items-start gap-2 text-[0.72rem] leading-relaxed text-text-secondary">
+                    <Tag className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden="true" />
+                    <p>
+                      Promociones activas: <span className="font-medium text-text-primary">{activePromotionLabels.join(" · ")}</span>
+                    </p>
+                  </div>
+                ) : null}
+
                 {/* Subtotal row */}
                 <div className="mb-4 flex items-baseline justify-between">
                   <span className="text-body-sm text-text-secondary">Subtotal</span>
-                  <span className="text-headline-sm font-semibold tabular-nums text-text-primary">
-                    {priceFormatter.format(subtotal)}
-                  </span>
+                  {showSubtotalPending ? (
+                    <span className="text-body-sm text-text-muted">Calculando...</span>
+                  ) : (
+                    <div className="text-right">
+                      {discountedSubtotal < subtotal ? (
+                        <span className="block text-[0.72rem] tabular-nums text-text-muted line-through">
+                          {priceFormatter.format(subtotal)}
+                        </span>
+                      ) : null}
+                      <span className="text-headline-sm font-semibold tabular-nums text-text-primary">
+                        {priceFormatter.format(discountedSubtotal)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Checkout CTA */}

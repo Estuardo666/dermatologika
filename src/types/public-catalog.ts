@@ -32,6 +32,13 @@ export interface PublicCatalogCategorySummary extends PublicCatalogCategoryRefer
   productCount: number;
 }
 
+export interface PublicPromotionPill {
+  shortLabel: string;
+  badgeParts: string[];
+  fullLabel: string;
+  tooltip: string;
+}
+
 export interface PublicCatalogProductSummary {
   id: string;
   slug: string;
@@ -44,6 +51,7 @@ export interface PublicCatalogProductSummary {
   stock: number;
   badge?: string;
   badgeColor?: string;
+  activePromotion: PublicPromotionPill | null;
   media: MediaAsset | null;
   category: PublicCatalogCategoryReference | null;
   categories: PublicCatalogCategoryReference[];

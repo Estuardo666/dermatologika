@@ -17,18 +17,16 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
+import { resolveCheckoutShippingBaseCost, type CheckoutShippingMethod } from "@/config/checkout";
 import { motionTokens } from "@/motion/tokens";
 import { useCart } from "@/features/cart/context/cart-context";
+import { useCheckoutPricingPreview } from "@/features/checkout/hooks/use-checkout-pricing-preview";
 import { cx } from "@/lib/utils";
 import { CheckoutOrderSummary } from "./checkout-order-summary";
 
 // ─── Button state ────────────────────────────────────────────────────────────
 
 type ButtonState = "idle" | "submitting" | "done";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ShippingMethod = "standard" | "pickup";
 
 // ─── Ecuador provinces and major cities ─────────────────────────────────────
 
@@ -202,7 +200,7 @@ export function CheckoutPageClient() {
   const [mounted, setMounted] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [buttonState, setButtonState] = useState<ButtonState>("idle");
-  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("standard");
+  const [shippingMethod, setShippingMethod] = useState<CheckoutShippingMethod>("standard");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -211,6 +209,21 @@ export function CheckoutPageClient() {
   const [city, setCity] = useState("");
   const [province, setProvince] = useState("");
   const [phone, setPhone] = useState("");
+  const {
+    preview: pricingPreview,
+    isLoading: isPricingLoading,
+    errorMessage: pricingError,
+    draftCouponCode,
+    setDraftCouponCode,
+    applyCouponCode,
+    appliedCouponCode,
+    hasPendingCouponChanges,
+  } = useCheckoutPricingPreview({
+    items,
+    shippingMethod,
+  });
+  const summaryDisplayTotal = pricingPreview?.totals.total
+    ?? subtotal + resolveCheckoutShippingBaseCost(shippingMethod);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -325,7 +338,7 @@ export function CheckoutPageClient() {
             <ChevronDown className="h-4 w-4" aria-hidden="true" />
           </motion.span>
           <span className="ml-auto text-label-md font-bold tabular-nums text-text-primary">
-            {fmt.format(subtotal)}
+            {fmt.format(summaryDisplayTotal)}
           </span>
         </button>
 
@@ -341,7 +354,19 @@ export function CheckoutPageClient() {
               className="overflow-hidden"
             >
               <div className="border-t border-border-soft px-4 py-5">
-                <CheckoutOrderSummary items={items} subtotal={subtotal} shippingMethod={shippingMethod} />
+                <CheckoutOrderSummary
+                  items={items}
+                  subtotal={subtotal}
+                  shippingMethod={shippingMethod}
+                  preview={pricingPreview}
+                  discountCode={draftCouponCode}
+                  onDiscountCodeChange={setDraftCouponCode}
+                  onApplyDiscountCode={applyCouponCode}
+                  appliedCouponCode={appliedCouponCode}
+                  isPricingLoading={isPricingLoading}
+                  pricingError={pricingError}
+                  hasPendingCouponChanges={hasPendingCouponChanges}
+                />
               </div>
             </motion.div>
           )}
@@ -740,7 +765,19 @@ export function CheckoutPageClient() {
                 ({itemCount} {itemCount === 1 ? "producto" : "productos"})
               </span>
             </h2>
-            <CheckoutOrderSummary items={items} subtotal={subtotal} shippingMethod={shippingMethod} />
+            <CheckoutOrderSummary
+              items={items}
+              subtotal={subtotal}
+              shippingMethod={shippingMethod}
+              preview={pricingPreview}
+              discountCode={draftCouponCode}
+              onDiscountCodeChange={setDraftCouponCode}
+              onApplyDiscountCode={applyCouponCode}
+              appliedCouponCode={appliedCouponCode}
+              isPricingLoading={isPricingLoading}
+              pricingError={pricingError}
+              hasPendingCouponChanges={hasPendingCouponChanges}
+            />
           </motion.div>
         </aside>
       </div>

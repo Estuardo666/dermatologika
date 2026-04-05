@@ -2,6 +2,12 @@
 
 import { startTransition, useEffect, useState } from "react";
 
+import { ADMIN_COMPACT_FIELD_CLASS_NAME } from "@/components/admin/form-styles";
+import {
+  ADMIN_BUTTON_PRIMARY_CLASS_NAME,
+  ADMIN_BUTTON_SECONDARY_CLASS_NAME,
+  ADMIN_PANEL_SURFACE_CLASS_NAME,
+} from "@/components/admin/surface-styles";
 import { MediaAssetFrame } from "@/components/media/media-asset-frame";
 import {
   saveHomeContent,
@@ -32,8 +38,7 @@ interface HomeContentEditorProps {
 type OrderedSelectionField = "featuredCategoryIds" | "featuredProductIds";
 
 const DEFAULT_UPLOAD_STORAGE_PREFIX = "Dermatologika/Uploads";
-const adminFieldClassName =
-  "w-full rounded-lg border border-[#c0d4be] bg-[#f8fbf7] px-4 py-3 text-body-md text-text-primary transition-[border-color,box-shadow,background-color] duration-[200ms] ease-soft hover:border-brand-primary hover:bg-[#fbfdfb] active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle";
+const adminFieldClassName = ADMIN_COMPACT_FIELD_CLASS_NAME;
 
 function sortMediaAssets(mediaAssets: AdminMediaAssetSummary[]) {
   return [...mediaAssets].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
@@ -432,8 +437,8 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
   }
 
   return (
-    <div className="space-y-10">
-      <section className="rounded-2xl border border-border-soft bg-surface-canvas p-6 shadow-xs">
+    <div className="space-y-8 sm:space-y-10">
+      <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
         <div className="space-y-2">
           <h1 className="text-headline-md text-text-primary">Home content editor</h1>
           <p className="max-w-3xl text-body-md text-text-secondary">
@@ -442,8 +447,8 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.9fr)]">
-        <form onSubmit={handleSubmit} className="space-y-8 rounded-2xl border border-border-soft bg-surface-canvas p-6 shadow-xs">
+      <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.9fr)] xl:gap-6">
+        <form onSubmit={handleSubmit} className={`space-y-6 sm:space-y-8 ${ADMIN_PANEL_SURFACE_CLASS_NAME}`}>
           <div className="space-y-2">
             <h2 className="text-section-lg text-text-primary">Contenido persistido</h2>
             <p className="text-body-sm text-text-secondary">
@@ -493,7 +498,7 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
 
           <label className="space-y-2 block">
             <span className="block text-label-md text-text-primary">Slides hero persistidos</span>
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-4 xl:grid-cols-3">
               <label className="space-y-2">
                 <span className="block text-body-sm text-text-secondary">Slide 1</span>
                 <select value={formData.heroMediaId} onChange={(event) => updateField("heroMediaId", event.target.value)} className={adminFieldClassName}>
@@ -585,14 +590,14 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
             <div className="space-y-3">
               {selectedFeaturedCategories.length > 0 ? (
                 selectedFeaturedCategories.map((category, index) => (
-                  <div key={category.id} className="flex items-center justify-between gap-3 rounded-xl border border-border-soft bg-surface-canvas p-4 text-body-sm text-text-secondary">
+                  <div key={category.id} className="flex flex-col gap-3 rounded-xl border border-border-soft bg-surface-canvas p-4 text-body-sm text-text-secondary sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-text-primary">{index + 1}. {category.name}</p>
                       <p>{category.href}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => moveOrderedSelection("featuredCategoryIds", category.id, -1)} disabled={index === 0} className="rounded-lg border border-border-default px-3 py-2 text-text-primary disabled:opacity-50">Subir</button>
-                      <button type="button" onClick={() => moveOrderedSelection("featuredCategoryIds", category.id, 1)} disabled={index === selectedFeaturedCategories.length - 1} className="rounded-lg border border-border-default px-3 py-2 text-text-primary disabled:opacity-50">Bajar</button>
+                    <div className="flex w-full gap-2 sm:w-auto">
+                      <button type="button" onClick={() => moveOrderedSelection("featuredCategoryIds", category.id, -1)} disabled={index === 0} className="flex-1 rounded-lg border border-border-default px-3 py-2 text-text-primary disabled:opacity-50 sm:flex-none">Subir</button>
+                      <button type="button" onClick={() => moveOrderedSelection("featuredCategoryIds", category.id, 1)} disabled={index === selectedFeaturedCategories.length - 1} className="flex-1 rounded-lg border border-border-default px-3 py-2 text-text-primary disabled:opacity-50 sm:flex-none">Bajar</button>
                     </div>
                   </div>
                 ))
@@ -647,14 +652,14 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
             <div className="space-y-3">
               {selectedFeaturedProducts.length > 0 ? (
                 selectedFeaturedProducts.map((product, index) => (
-                  <div key={product.id} className="flex items-center justify-between gap-3 rounded-xl border border-border-soft bg-surface-canvas p-4 text-body-sm text-text-secondary">
+                  <div key={product.id} className="flex flex-col gap-3 rounded-xl border border-border-soft bg-surface-canvas p-4 text-body-sm text-text-secondary sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-text-primary">{index + 1}. {product.name}</p>
                       <p>{product.href}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => moveOrderedSelection("featuredProductIds", product.id, -1)} disabled={index === 0} className="rounded-lg border border-border-default px-3 py-2 text-text-primary disabled:opacity-50">Subir</button>
-                      <button type="button" onClick={() => moveOrderedSelection("featuredProductIds", product.id, 1)} disabled={index === selectedFeaturedProducts.length - 1} className="rounded-lg border border-border-default px-3 py-2 text-text-primary disabled:opacity-50">Bajar</button>
+                    <div className="flex w-full gap-2 sm:w-auto">
+                      <button type="button" onClick={() => moveOrderedSelection("featuredProductIds", product.id, -1)} disabled={index === 0} className="flex-1 rounded-lg border border-border-default px-3 py-2 text-text-primary disabled:opacity-50 sm:flex-none">Subir</button>
+                      <button type="button" onClick={() => moveOrderedSelection("featuredProductIds", product.id, 1)} disabled={index === selectedFeaturedProducts.length - 1} className="flex-1 rounded-lg border border-border-default px-3 py-2 text-text-primary disabled:opacity-50 sm:flex-none">Bajar</button>
                     </div>
                   </div>
                 ))
@@ -717,15 +722,15 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
           {errorMessage ? <p className="text-body-sm text-status-error">{errorMessage}</p> : null}
           {successMessage ? <p className="text-body-sm text-status-success">{successMessage}</p> : null}
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={submissionState === "saving"} className="inline-flex min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm disabled:opacity-50">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <button type="submit" disabled={submissionState === "saving"} className={`${ADMIN_BUTTON_PRIMARY_CLASS_NAME} w-full sm:w-auto`}>
               {submissionState === "saving" ? "Guardando..." : "Guardar Home"}
             </button>
           </div>
         </form>
 
-        <aside className="space-y-6">
-          <section className="rounded-2xl border border-border-soft bg-surface-canvas p-6 shadow-xs">
+        <aside className="space-y-5 sm:space-y-6">
+          <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
             <div className="space-y-2">
               <h2 className="text-section-lg text-text-primary">Subir media a Cloudflare R2</h2>
               <p className="text-body-sm text-text-secondary">
@@ -747,7 +752,7 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
 
               {uploadFile ? (
                 <div className="space-y-4">
-                  <div className="rounded-xl border border-border-soft bg-surface-subtle p-4 text-body-sm text-text-secondary">
+                  <div className="rounded-xl border border-border-soft bg-surface-subtle p-4 text-body-sm text-text-secondary break-all">
                     <p className="text-text-primary">{uploadFile.name}</p>
                     <p>{(uploadFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                     <p>{uploadFile.type || "Sin MIME type detectado"}</p>
@@ -813,7 +818,7 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
                 />
               </label>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-3">
                 <label className="space-y-2">
                   <span className="block text-label-md text-text-primary">Width</span>
                   <input
@@ -858,14 +863,14 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
               <button
                 type="submit"
                 disabled={uploadSubmissionState === "saving"}
-                className="inline-flex min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm disabled:opacity-50"
+                className={`${ADMIN_BUTTON_PRIMARY_CLASS_NAME} w-full sm:w-auto`}
               >
                 {uploadSubmissionState === "saving" ? "Subiendo..." : "Subir y registrar media"}
               </button>
             </form>
           </section>
 
-          <section className="rounded-2xl border border-border-soft bg-surface-canvas p-6 shadow-xs">
+          <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
             <div className="space-y-2">
               <h2 className="text-section-lg text-text-primary">Slide hero principal actual</h2>
               <p className="text-body-sm text-text-secondary">
@@ -875,7 +880,7 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
 
             <div className="mt-4 rounded-xl border border-border-soft bg-surface-subtle p-4 text-body-sm text-text-secondary">
               {selectedHeroMedia ? (
-                <div className="space-y-2">
+                <div className="space-y-2 break-all">
                   <p className="text-text-primary">{selectedHeroMedia.storageKey}</p>
                   <p>{selectedHeroMedia.publicUrl ?? "Sin URL pública derivada"}</p>
                 </div>
@@ -885,7 +890,7 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-border-soft bg-surface-canvas p-6 shadow-xs">
+          <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
             <div className="space-y-2">
               <h2 className="text-section-lg text-text-primary">Registrar media asset existente</h2>
               <p className="text-body-sm text-text-secondary">
@@ -925,7 +930,7 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
                   <input value={mediaInput.posterUrl ?? ""} onChange={(event) => updateMediaField("posterUrl", event.target.value)} className={adminFieldClassName} />
                 </label>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-3">
                 <label className="space-y-2">
                   <span className="block text-label-md text-text-primary">Width</span>
                   <input type="number" value={mediaInput.width ?? ""} onChange={(event) => updateMediaField("width", event.target.value ? Number(event.target.value) : null)} className={adminFieldClassName} />
@@ -943,13 +948,13 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
               {mediaErrorMessage ? <p className="text-body-sm text-status-error">{mediaErrorMessage}</p> : null}
               {mediaSuccessMessage ? <p className="text-body-sm text-status-success">{mediaSuccessMessage}</p> : null}
 
-              <button type="submit" disabled={mediaSubmissionState === "saving"} className="inline-flex min-h-11 items-center justify-center rounded-pill border border-border-default px-6 py-3 text-label-md text-text-primary disabled:opacity-50">
+              <button type="submit" disabled={mediaSubmissionState === "saving"} className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} w-full sm:w-auto`}>
                 {mediaSubmissionState === "saving" ? "Registrando..." : "Registrar media"}
               </button>
             </form>
           </section>
 
-          <section className="rounded-2xl border border-border-soft bg-surface-canvas p-6 shadow-xs">
+          <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
             <div className="space-y-2">
               <h2 className="text-section-lg text-text-primary">Media assets disponibles</h2>
               <p className="text-body-sm text-text-secondary">
@@ -958,7 +963,7 @@ export function HomeContentEditor({ initialData }: HomeContentEditorProps) {
             </div>
             <ul className="mt-4 space-y-3">
               {mediaAssets.map((asset) => (
-                <li key={asset.id} className="rounded-xl border border-border-soft bg-surface-subtle p-4 text-body-sm text-text-secondary">
+                <li key={asset.id} className="rounded-xl border border-border-soft bg-surface-subtle p-4 text-body-sm text-text-secondary break-all">
                   <p className="text-text-primary">{asset.storageKey}</p>
                   <p>{asset.publicUrl ?? "Sin publicUrl"}</p>
                   <p>{asset.kind.toUpperCase()}</p>

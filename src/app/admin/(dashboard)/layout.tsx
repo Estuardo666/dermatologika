@@ -12,8 +12,8 @@ export default async function AdminDashboardLayout({ children }: AdminDashboardL
   const user = await requireAdminPageUser();
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-surface-subtle px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-6 lg:flex-row lg:items-start">
+    <div className="min-h-screen overflow-x-clip bg-surface-subtle px-3 py-4 sm:px-5 sm:py-6 lg:px-8">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-4 sm:gap-6 lg:flex-row lg:items-start">
         <AdminSidebar userEmail={user.email} userRole={user.role} />
         <main className="min-w-0 flex-1 overflow-x-clip">
           <AdminContentShell>{children}</AdminContentShell>

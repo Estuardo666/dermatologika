@@ -265,6 +265,7 @@ Typical responsibilities:
 * external integrations
 * reusable application flows
 * service abstractions consumed by UI or backend layers
+* checkout pricing preview clients and admin promotion orchestration helpers
 
 Rules:
 
@@ -284,12 +285,26 @@ Typical responsibilities:
 * secure actions
 * route handlers or server-side use cases
 * integrations requiring secrets
+* pricing and promotion rule evaluation
 
 Rules:
 
 * this is the secure backend boundary
 * nothing here should leak accidentally to the client
 * validation and permission checks belong here when relevant
+
+### Pricing and Promotions Module
+
+The pricing module is split across clear ownership boundaries:
+
+* `src/server/pricing/` evaluates promotion rules, scope filters, shipping incentives, and checkout price previews.
+* `src/services/admin-promotions/` orchestrates protected promotion CRUD workflows for admin APIs.
+* `src/app/api/admin/promotions/` exposes authenticated promotion management contracts.
+* `src/app/api/checkout/price-preview/` exposes the public checkout pricing preview contract used by checkout UI.
+
+This module must remain a pricing layer on top of product base prices.
+
+It must not overwrite synchronized product pricing fields just to represent temporary offers.
 
 ## `src/hooks/`
 

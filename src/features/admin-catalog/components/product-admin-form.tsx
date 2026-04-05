@@ -4,6 +4,19 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
+import {
+	ADMIN_COMPACT_FIELD_CLASS_NAME,
+	ADMIN_COMPACT_PROMINENT_FIELD_CLASS_NAME,
+	ADMIN_COMPACT_READONLY_FIELD_CLASS_NAME,
+} from "@/components/admin/form-styles";
+import {
+	ADMIN_BUTTON_DANGER_CLASS_NAME,
+	ADMIN_BUTTON_PRIMARY_CLASS_NAME,
+	ADMIN_BUTTON_SECONDARY_CLASS_NAME,
+	ADMIN_HERO_SURFACE_CLASS_NAME,
+	ADMIN_INSET_CARD_CLASS_NAME,
+	ADMIN_PANEL_SURFACE_CLASS_NAME,
+} from "@/components/admin/surface-styles";
 import { AdminBreadcrumbs } from "@/components/layout/admin-breadcrumbs";
 import { MediaAssetFrame } from "@/components/media/media-asset-frame";
 import { ProductBadge } from "@/components/ui/product-badge";
@@ -32,6 +45,9 @@ import type {
 import type { MediaAsset } from "@/types/media";
 
 type SubmissionState = "idle" | "saving" | "success" | "error";
+
+const adminFieldClassName = ADMIN_COMPACT_FIELD_CLASS_NAME;
+const adminReadonlyFieldClassName = ADMIN_COMPACT_READONLY_FIELD_CLASS_NAME;
 
 interface ProductAdminFormProps {
 	initialData: AdminCatalogEditorData;
@@ -173,9 +189,6 @@ function formatCurrency(value: number | null | undefined): string {
 
 	return adminCurrencyFormatter.format(value);
 }
-
-const adminFieldClassName = "w-full rounded-xl border border-[#c0d4be] bg-[#f8fbf7] px-4 py-3 text-body-md text-text-primary transition-[border-color,box-shadow,background-color] duration-[200ms] ease-soft hover:border-brand-primary hover:bg-[#fbfdfb] active:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle";
-const adminReadonlyFieldClassName = "w-full rounded-lg border border-[#c0d4be] bg-[#f8fbf7] px-3 py-2 text-caption text-text-secondary sm:text-body-sm";
 
 export function ProductAdminForm({ initialData, mode, product, syncCapabilities }: ProductAdminFormProps) {
 	const router = useRouter();
@@ -533,7 +546,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 
 	return (
 		<div className="space-y-6">
-			<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-6 shadow-xs sm:p-8">
+			<section className={ADMIN_HERO_SURFACE_CLASS_NAME}>
 				<div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 					<div className="space-y-2">
 						<AdminBreadcrumbs
@@ -570,7 +583,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 			</section>
 
 			<div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_320px]">
-				<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+				<section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
 					<form id="product-form" onSubmit={handleSubmit} className="space-y-6">
 						<div className="rounded-2xl bg-surface-subtle p-4">
 							<div className="space-y-4">
@@ -585,7 +598,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 
 								<label className="space-y-2 block">
 									<span className="block text-label-md text-text-primary">Nombre</span>
-									<input value={formData.name} onChange={(event) => updateName(event.target.value)} className={`${adminFieldClassName} rounded-2xl text-section-md font-semibold sm:py-4 sm:text-section-lg`} placeholder="Serum despigmentante" />
+									<input value={formData.name} onChange={(event) => updateName(event.target.value)} className={ADMIN_COMPACT_PROMINENT_FIELD_CLASS_NAME} placeholder="Serum despigmentante" />
 								</label>
 
 								<div className="grid gap-3 md:grid-cols-2">
@@ -624,7 +637,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 							</select>
 						</label>
 
-						<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+						<div className={`space-y-3 ${ADMIN_INSET_CARD_CLASS_NAME}`}>
 							<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 								<div>
 									<span className="block text-label-md text-text-primary">Precio e inventario</span>
@@ -698,7 +711,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 						</div>
 
 						<div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-							<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+							<div className={`space-y-3 ${ADMIN_INSET_CARD_CLASS_NAME}`}>
 								<div className="flex items-center justify-between gap-3">
 									<span className="block text-label-md text-text-primary">Categorias</span>
 									<span className="text-caption uppercase tracking-[0.12em] text-text-muted">La primera queda como principal</span>
@@ -756,7 +769,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 								</div>
 							</div>
 
-							<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+							<div className={`space-y-3 ${ADMIN_INSET_CARD_CLASS_NAME}`}>
 								<div className="flex items-center justify-between gap-3">
 									<span className="block text-label-md text-text-primary">Badge</span>
 									{formData.badge ? (
@@ -805,7 +818,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 						</div>
 
 						<div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
-							<div className="space-y-3 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+							<div className={`space-y-3 ${ADMIN_INSET_CARD_CLASS_NAME}`}>
 								<div className="space-y-2">
 									<span className="block text-label-md text-text-primary">Imagen de producto</span>
 									<input key={fileInputKey} type="file" accept="image/*" onChange={(event) => handleImageChange(event.target.files?.[0] ?? null)} className={adminFieldClassName} />
@@ -832,7 +845,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 				</section>
 
 				<aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
-					<section className="rounded-[28px] border border-border-soft bg-surface-canvas p-5 shadow-xs sm:p-6">
+					<section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>
 						<h2 className="text-section-lg font-semibold text-text-primary">Estado del producto</h2>
 						
 						<div className="mt-5 space-y-2 text-body-sm leading-relaxed">
@@ -909,7 +922,7 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 							{errorMessage ? <p className="mb-2 text-body-sm text-status-error">{errorMessage}</p> : null}
 							{mode === "edit" && persistedProduct ? (
 								<>
-									<div className="space-y-2 rounded-2xl border border-border-soft bg-surface-subtle p-4">
+									<div className={`space-y-2 ${ADMIN_INSET_CARD_CLASS_NAME}`}>
 										<label className="space-y-2 block" htmlFor="product-sync-mode">
 											<span className="block text-label-md text-text-primary">Modo de sync</span>
 											<select
@@ -948,16 +961,16 @@ export function ProductAdminForm({ initialData, mode, product, syncCapabilities 
 									) : null}
 								</>
 							) : null}
-							<button type="submit" form="product-form" disabled={submissionState === "saving"} className="inline-flex w-full min-h-11 items-center justify-center rounded-pill bg-brand-primary px-6 py-3 text-label-md text-text-inverse shadow-sm transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:bg-emerald-600 active:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas disabled:opacity-50">
+							<button type="submit" form="product-form" disabled={submissionState === "saving"} className={`w-full ${ADMIN_BUTTON_PRIMARY_CLASS_NAME}`}>
 								{submissionState === "saving" ? "Guardando..." : mode === "edit" ? "Actualizar producto" : "Crear producto"}
 							</button>
 
-							<Link href="/admin/catalog/products" className="inline-flex w-full min-h-11 items-center justify-center rounded-pill border border-border-default bg-surface-canvas px-6 py-3 text-label-md text-text-primary transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-border-strong hover:bg-surface-soft active:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+							<Link href="/admin/catalog/products" className={`w-full ${ADMIN_BUTTON_SECONDARY_CLASS_NAME}`}>
 								Cancelar
 							</Link>
 
 							{mode === "edit" && product ? (
-								<button type="button" onClick={handleDelete} className="inline-flex w-full min-h-11 items-center justify-center rounded-pill border border-status-error/30 px-6 py-3 text-label-md text-status-error transition-[background-color,border-color,color] duration-[200ms] ease-soft hover:border-status-error/50 hover:bg-status-error/10 active:bg-status-error/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-error focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+								<button type="button" onClick={handleDelete} className={`w-full ${ADMIN_BUTTON_DANGER_CLASS_NAME}`}>
 									Eliminar producto
 								</button>
 							) : null}
