@@ -1,7 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 
+import { PublicAccountEntry } from "@/components/layout/public-account-entry";
 import { CartHeaderButton } from "@/components/layout/cart-header-button";
 import { PublicLinkButton } from "@/components/ui/public-link-button";
+import { getClerkPublicConfig } from "@/server/auth/clerk-config";
 
 const navigationLinks = [
   { href: "/categorias", label: "Categorias" },
@@ -10,6 +13,8 @@ const navigationLinks = [
 ] as const;
 
 export function PublicHeader() {
+  const clerkConfig = getClerkPublicConfig();
+
   return (
     <header className="sticky top-0 z-sticky border-b border-border-soft bg-surface-canvas/95 backdrop-blur">
       <div className="container flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
@@ -18,14 +23,25 @@ export function PublicHeader() {
             href="/"
             className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas"
           >
-            <img
+            <Image
               src="/logotipo.png"
               alt="Dermatologika"
+              width={224}
+              height={56}
               className="h-14 w-auto"
             />
           </Link>
 
           <div className="flex items-center gap-2">
+            {clerkConfig.isConfigured ? (
+              <PublicAccountEntry />
+            ) : (
+              <PublicLinkButton
+                action={{ href: "/login", label: "Ingresar" }}
+                variant="secondary"
+                className="min-h-10 px-4 py-2"
+              />
+            )}
             <div className="hidden md:block">
               <PublicLinkButton
                 action={{ href: "/#contact-cta", label: "Contacto" }}

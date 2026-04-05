@@ -8,6 +8,7 @@ Base tecnica production-ready para iniciar el desarrollo de Dermatologika con ar
 - React
 - TypeScript strict
 - Tailwind CSS
+- Clerk para autenticacion publica de cuentas
 - PostgreSQL
 - Prisma ORM
 - Zod para validacion
@@ -92,6 +93,22 @@ powershell -ExecutionPolicy Bypass -File scripts/cleanup-env.ps1
 - **Database Setup Guide**: [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)
 - **API Testing**: [docs/API_TESTING.md](docs/API_TESTING.md)
 - **ContactLead Vertical**: [docs/CONTACT_LEAD_VERTICAL.md](docs/CONTACT_LEAD_VERTICAL.md)
+- **Public Auth With Clerk**: [docs/PUBLIC_AUTH_CLERK.md](docs/PUBLIC_AUTH_CLERK.md)
+
+### Public Auth With Clerk
+
+- Public account pages now live at `/login` and `/register`.
+- Public auth uses Clerk with email/password only.
+- Google or other external providers are not enabled by default.
+- Required env vars:
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+```
+
+- If these keys are not configured, the public auth pages render a setup notice instead of crashing the app.
+- Current admin auth remains separate and still uses the internal session-cookie flow at `/admin/login`.
 
 ### Internal API Protection
 

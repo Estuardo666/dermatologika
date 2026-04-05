@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Plus_Jakarta_Sans } from "next/font/google";
+
+import { getClerkPublicConfig } from "@/server/auth/clerk-config";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -22,9 +25,23 @@ type RootLayoutProps = Readonly<{
 }>;
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  const clerkConfig = getClerkPublicConfig();
+
   return (
     <html lang="es" className={plusJakartaSans.variable}>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        {clerkConfig.isConfigured ? (
+          <ClerkProvider
+            publishableKey={clerkConfig.publishableKey}
+            signInUrl={clerkConfig.signInUrl}
+            signUpUrl={clerkConfig.signUpUrl}
+          >
+            {children}
+          </ClerkProvider>
+        ) : (
+          children
+        )}
+      </body>
     </html>
   );
 }
