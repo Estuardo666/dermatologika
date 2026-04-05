@@ -3,6 +3,7 @@
 import { startTransition, useMemo, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   ADMIN_COMPACT_FIELD_CLASS_NAME,
@@ -15,8 +16,6 @@ import {
   ADMIN_BUTTON_SECONDARY_CLASS_NAME,
   ADMIN_HERO_SURFACE_CLASS_NAME,
   ADMIN_INSET_CARD_CLASS_NAME,
-  ADMIN_LIST_ITEM_ACTIVE_CLASS_NAME,
-  ADMIN_LIST_ITEM_CLASS_NAME,
   ADMIN_PANEL_SURFACE_CLASS_NAME,
   ADMIN_STICKY_PANEL_SURFACE_CLASS_NAME,
 } from "@/components/admin/surface-styles";
@@ -36,6 +35,7 @@ import type {
   BuyXGetYPromotionConfig,
   FreeShippingPromotionConfig,
   NthItemPercentagePromotionConfig,
+  PromotionItemMatchingMode,
   PromotionRuleType,
   PromotionScopeSelection,
   PromotionStackingMode,
@@ -62,6 +62,7 @@ interface PromotionEditorFormState {
   couponCode: string;
   ruleType: PromotionRuleType;
   stackingMode: PromotionStackingMode;
+  itemMatchingMode: PromotionItemMatchingMode;
   priority: string;
   startsAt: string;
   endsAt: string;
@@ -83,7 +84,8 @@ interface PromotionEditorFormState {
 
 interface PromotionAdminPanelProps {
   initialData: AdminPromotionEditorData;
-  pageMode?: "index" | "create";
+  pageMode?: "index" | "create" | "edit";
+  initialEditingPromotionId?: string | null;
 }
 
 interface PromotionPreset {
@@ -119,6 +121,17 @@ const stackingCopy: Record<PromotionStackingMode, { title: string; description: 
   stackable: {
     title: "Acumulable",
     description: "Puede combinarse con otra promoción compatible. Úsala solo si de verdad quieres sumar descuentos.",
+  },
+};
+
+const matchingModeCopy: Record<PromotionItemMatchingMode, { title: string; description: string }> = {
+  same_product: {
+    title: "Mismo producto",
+    description: "Cada producto debe cumplir su propia cantidad. Si eliges una marca, 3x2 solo entra cuando haya 3 unidades del mismo producto.",
+  },
+  mixed_scope: {
+    title: "Mezclar productos del alcance",
+    description: "Suma unidades distintas dentro de la marca, categoría o selección elegida para activar la promoción.",
   },
 };
 
@@ -226,6 +239,7 @@ function buildEmptyPromotionForm(nextPriority = 10): PromotionEditorFormState {
     couponCode: "",
     ruleType: "buy_x_get_y",
     stackingMode: "exclusive",
+    itemMatchingMode: "same_product",
     priority: String(nextPriority),
     startsAt: "",
     endsAt: "",
@@ -267,6 +281,7 @@ function buildFormFromPromotion(promotion: AdminPromotionItem): PromotionEditorF
         couponCode: promotion.couponCode ?? "",
         ruleType: promotion.ruleType,
         stackingMode: promotion.stackingMode,
+        itemMatchingMode: config.matchingMode ?? "same_product",
         priority: String(promotion.priority),
         startsAt,
         endsAt,
@@ -289,6 +304,7 @@ function buildFormFromPromotion(promotion: AdminPromotionItem): PromotionEditorF
         couponCode: promotion.couponCode ?? "",
         ruleType: promotion.ruleType,
         stackingMode: promotion.stackingMode,
+        itemMatchingMode: config.matchingMode ?? "same_product",
         priority: String(promotion.priority),
         startsAt,
         endsAt,
@@ -310,6 +326,7 @@ function buildFormFromPromotion(promotion: AdminPromotionItem): PromotionEditorF
         couponCode: promotion.couponCode ?? "",
         ruleType: promotion.ruleType,
         stackingMode: promotion.stackingMode,
+        itemMatchingMode: config.matchingMode ?? "same_product",
         priority: String(promotion.priority),
         startsAt,
         endsAt,
@@ -333,6 +350,7 @@ function buildFormFromPromotion(promotion: AdminPromotionItem): PromotionEditorF
         couponCode: promotion.couponCode ?? "",
         ruleType: promotion.ruleType,
         stackingMode: promotion.stackingMode,
+        itemMatchingMode: baseForm.itemMatchingMode,
         priority: String(promotion.priority),
         startsAt,
         endsAt,
@@ -364,14 +382,27 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-export function PromotionAdminPanel({ initialData, pageMode = "index" }: PromotionAdminPanelProps) {
+export function PromotionAdminPanel({
+  initialData,
+  pageMode = "index",
+  initialEditingPromotionId = null,
+}: PromotionAdminPanelProps) {
+  const router = useRouter();
   const isCreatePage = pageMode === "create";
+  const isEditPage = pageMode === "edit";
   const [promotions, setPromotions] = useState(() => sortPromotions(initialData.promotions));
-  const [editingPromotionId, setEditingPromotionId] = useState<string | null>(null);
+  const [editingPromotionId, setEditingPromotionId] = useState<string | null>(initialEditingPromotionId);
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<PromotionEditorFormState>(() =>
-    buildEmptyPromotionForm(resolveNextPriority(initialData.promotions)),
-  );
+  const [formData, setFormData] = useState<PromotionEditorFormState>(() => {
+    if (initialEditingPromotionId) {
+      const promotion = initialData.promotions.find((item) => item.id === initialEditingPromotionId) ?? null;
+      if (promotion) {
+        return buildFormFromPromotion(promotion);
+      }
+    }
+
+    return buildEmptyPromotionForm(resolveNextPriority(initialData.promotions));
+  });
   const [submissionState, setSubmissionState] = useState<SubmissionState>("idle");
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -404,6 +435,14 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
   );
 
   function resetForm() {
+    if (isEditPage && editingPromotion) {
+      setFormData(buildFormFromPromotion(editingPromotion));
+      setSubmissionState("idle");
+      setFeedbackMessage(null);
+      setErrorMessage(null);
+      return;
+    }
+
     setEditingPromotionId(null);
     setSelectedPresetId(null);
     setFormData(buildEmptyPromotionForm(resolveNextPriority(promotions)));
@@ -431,6 +470,7 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
       return {
         ...current,
         ruleType: nextRuleType,
+        itemMatchingMode: nextDefaults.itemMatchingMode,
         buyQuantity: nextDefaults.buyQuantity,
         getQuantity: nextDefaults.getQuantity,
         buyXGetYPercentOff: nextDefaults.buyXGetYPercentOff,
@@ -517,6 +557,11 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
   }
 
   function startEdit(promotion: AdminPromotionItem) {
+    if (pageMode === "index") {
+      router.push(`/admin/catalog/promotions/${promotion.id}`);
+      return;
+    }
+
     setEditingPromotionId(promotion.id);
     setSelectedPresetId(null);
     setFormData(buildFormFromPromotion(promotion));
@@ -543,6 +588,11 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
         setFeedbackMessage(editingPromotionId ? "Promoción actualizada correctamente." : "Promoción creada correctamente.");
         setEditingPromotionId(promotion.id);
         setFormData(buildFormFromPromotion(promotion));
+
+        if (!editingPromotionId) {
+          router.push(`/admin/catalog/promotions/${promotion.id}`);
+          router.refresh();
+        }
       })().catch((error) => {
         setSubmissionState("error");
         setErrorMessage(error instanceof Error ? error.message : "No se pudo guardar la promoción.");
@@ -566,8 +616,13 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
           setSubmissionState("success");
           setFeedbackMessage("Promoción eliminada correctamente.");
           if (editingPromotionId === deletedId) {
-            setEditingPromotionId(null);
-            setFormData(buildEmptyPromotionForm(resolveNextPriority(promotions.filter((promotion) => promotion.id !== deletedId))));
+            if (isEditPage) {
+              router.push("/admin/catalog/promotions");
+              router.refresh();
+            } else {
+              setEditingPromotionId(null);
+              setFormData(buildEmptyPromotionForm(resolveNextPriority(promotions.filter((promotion) => promotion.id !== deletedId))));
+            }
           }
         })
         .catch((error) => {
@@ -820,6 +875,35 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
             <p className="text-body-sm text-text-secondary">Completa solo los campos del tipo seleccionado. Debajo te explico qué significa cada uno.</p>
           </div>
 
+          {formData.ruleType !== "free_shipping" ? (
+            <div className="space-y-4 rounded-2xl border border-border-soft bg-surface-canvas p-4">
+              <div>
+                <p className="text-label-md text-text-primary">Cómo se cuentan las unidades</p>
+                <p className="text-body-sm text-text-secondary">Define si la promo debe juntar productos distintos dentro del alcance o si cada SKU debe cumplir la cantidad por separado.</p>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {(["same_product", "mixed_scope"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => updateField("itemMatchingMode", mode)}
+                    className={cx(
+                      "rounded-2xl border p-4 text-left transition-colors",
+                      formData.itemMatchingMode === mode
+                        ? "border-border-brand bg-surface-brandTint"
+                        : "border-border-soft bg-surface-canvas hover:border-border-default",
+                    )}
+                    aria-pressed={formData.itemMatchingMode === mode}
+                  >
+                    <p className="text-label-md text-text-primary">{matchingModeCopy[mode].title}</p>
+                    <p className="mt-1 text-body-sm text-text-secondary">{matchingModeCopy[mode].description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {formData.ruleType === "buy_x_get_y" ? (
             <div className="grid gap-4 md:grid-cols-2">
               <RuleHint>
@@ -973,6 +1057,9 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
               <Chip tone="brand">{ruleLabels[formData.ruleType]}</Chip>
               <Chip tone="neutral">{triggerLabels[formData.triggerType]}</Chip>
               <Chip tone={formData.isActive ? "success" : "neutral"}>{formData.isActive ? "Activa" : "Inactiva"}</Chip>
+              {formData.ruleType !== "free_shipping" ? (
+                <Chip tone="neutral">{formData.itemMatchingMode === "same_product" ? "Por producto" : "Mezcla alcance"}</Chip>
+              ) : null}
             </div>
             <div className="grid gap-3 text-body-sm text-text-secondary sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-xl border border-border-soft bg-surface-canvas px-3 py-2.5">
@@ -1136,8 +1223,47 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
     </>
   );
 
+  if (isCreatePage || isEditPage) {
+    return (
+      <div className={cx("space-y-6", (isCreatePage || isEditPage) && "mx-auto max-w-6xl") }>
+        <section className={ADMIN_HERO_SURFACE_CLASS_NAME}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <AdminBreadcrumbs
+                items={[
+                  { label: "Admin", href: "/admin/leads" },
+                  { label: "Catalogo", href: "/admin/catalog/categories" },
+                  { label: "Promociones", href: "/admin/catalog/promotions" },
+                  { label: isCreatePage ? "Nueva promoción" : editingPromotion?.name || "Editar promoción" },
+                ]}
+              />
+              <p className="text-caption uppercase tracking-[0.14em] text-text-muted">Catalogo</p>
+              <h1 className="text-section-lg text-text-primary sm:text-headline-sm">{isCreatePage ? "Nueva promoción" : "Editar promoción"}</h1>
+              <p className="max-w-3xl text-body-sm text-text-secondary">
+                {isCreatePage
+                  ? "Crea una promoción en una pantalla dedicada, compacta y con más aire para configurar reglas largas sin que todo se vea amontonado."
+                  : "Ajusta la promoción en una pantalla dedicada, sin compartir espacio con el listado."}
+              </p>
+            </div>
+
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <Link href="/admin/catalog/promotions" className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} w-full sm:w-auto`}>
+                Volver al listado
+              </Link>
+              <Link href="/admin/catalog/promotions/new" className={`${ADMIN_BUTTON_PRIMARY_CLASS_NAME} w-full sm:w-auto`}>
+                Nueva promoción
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>{editorPanel}</section>
+      </div>
+    );
+  }
+
   return (
-    <div className={cx("space-y-6", isCreatePage && "mx-auto max-w-6xl") }>
+    <div className="space-y-6">
       <section className={ADMIN_HERO_SURFACE_CLASS_NAME}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
@@ -1166,9 +1292,7 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
         </div>
       </section>
 
-      <div className={cx("grid gap-5 xl:gap-6", !isCreatePage && "xl:grid-cols-[minmax(0,1.08fr)_420px]")}>
-        {!isCreatePage ? (
-          <section className={`space-y-5 ${ADMIN_PANEL_SURFACE_CLASS_NAME}`}>
+      <section className={`space-y-5 ${ADMIN_PANEL_SURFACE_CLASS_NAME}`}>
             <div className="grid gap-3 sm:grid-cols-3">
               <StatCard label="Total" value={String(promotions.length)} helper="promociones registradas" />
               <StatCard label="Activas" value={String(activeCount)} helper="listas para checkout" />
@@ -1180,33 +1304,18 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
                 Todavía no hay promociones. Crea la primera para activar ofertas complejas en el checkout.
               </div>
             ) : (
-              <div className="space-y-3">
-                {promotions.map((promotion) => {
-                  const isEditing = editingPromotionId === promotion.id;
-                  return (
-                    <button
-                      key={promotion.id}
-                      type="button"
-                      onClick={() => startEdit(promotion)}
-                      className={cx(isEditing ? ADMIN_LIST_ITEM_ACTIVE_CLASS_NAME : ADMIN_LIST_ITEM_CLASS_NAME)}
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-3">
-                          <div className="space-y-1">
-                            <h2 className="text-section-sm text-text-primary">{promotion.name}</h2>
-                            <p className="text-body-sm text-text-secondary">
-                              {promotion.description?.trim().length ? promotion.description : editorDescriptionFallback(promotion.ruleType)}
-                            </p>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            <Chip tone={promotion.isActive ? "success" : "neutral"}>
-                              {promotion.isActive ? "Activa" : "Inactiva"}
-                            </Chip>
-                            <Chip tone="brand">{ruleLabels[promotion.ruleType]}</Chip>
-                            <Chip tone="neutral">{triggerLabels[promotion.triggerType]}</Chip>
-                            {promotion.couponCode ? <Chip tone="warning">{promotion.couponCode}</Chip> : null}
-                          </div>
+              <div className="rounded-[24px] border border-border-soft bg-surface-subtle">
+                <div className="space-y-3 px-3 py-3 md:hidden">
+                  {promotions.map((promotion) => (
+                    <article key={promotion.id} className="rounded-2xl border border-border-soft bg-surface-canvas p-4 shadow-[0_14px_28px_-24px_rgba(28,56,41,0.25)]">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1.5">
+                          <Link href={`/admin/catalog/promotions/${promotion.id}`} className="block rounded-lg px-1 py-0.5 text-label-md text-text-primary transition-[color,background-color,border-color] duration-[200ms] ease-soft hover:bg-surface-subtle hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+                            {promotion.name}
+                          </Link>
+                          <p className="text-body-sm text-text-secondary">
+                            {promotion.description?.trim().length ? promotion.description : editorDescriptionFallback(promotion.ruleType)}
+                          </p>
                         </div>
 
                         <span className="rounded-full border border-border-soft px-2.5 py-1 text-caption uppercase tracking-[0.12em] text-text-muted">
@@ -1214,28 +1323,93 @@ export function PromotionAdminPanel({ initialData, pageMode = "index" }: Promoti
                         </span>
                       </div>
 
-                      <div className="mt-4 grid gap-2 text-body-sm text-text-secondary sm:grid-cols-2 2xl:grid-cols-4">
-                        <span>Productos: {promotion.scope.productIds.length || "Todos"}</span>
-                        <span>Categorías: {promotion.scope.categoryIds.length || "Todas"}</span>
-                        <span>Marcas: {promotion.scope.brandIds.length || "Todas"}</span>
-                        <span>Actualizada: {formatDate(promotion.updatedAt)}</span>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Chip tone={promotion.isActive ? "success" : "neutral"}>{promotion.isActive ? "Activa" : "Inactiva"}</Chip>
+                        <Chip tone="brand">{ruleLabels[promotion.ruleType]}</Chip>
+                        <Chip tone="neutral">{triggerLabels[promotion.triggerType]}</Chip>
+                        {promotion.couponCode ? <Chip tone="warning">{promotion.couponCode}</Chip> : null}
                       </div>
-                    </button>
-                  );
-                })}
+
+                      <dl className="mt-4 grid gap-3 text-body-sm text-text-secondary sm:grid-cols-2">
+                        <div>
+                          <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Conteo</dt>
+                          <dd className="mt-1">{resolvePromotionMatchingModeLabel(promotion)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Actualizado</dt>
+                          <dd className="mt-1">{formatDate(promotion.updatedAt)}</dd>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <dt className="text-caption uppercase tracking-[0.12em] text-text-muted">Alcance</dt>
+                          <dd className="mt-1">{resolvePromotionScopeSummary(promotion)}</dd>
+                        </div>
+                      </dl>
+
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                        <Link href={`/admin/catalog/promotions/${promotion.id}`} className={`${ADMIN_BUTTON_SECONDARY_CLASS_NAME} w-full sm:w-auto`}>
+                          Editar
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="min-w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-border-soft text-caption uppercase tracking-[0.12em] text-text-muted">
+                        <th className="px-4 py-3 font-medium">Promoción</th>
+                        <th className="px-4 py-3 font-medium">Estado</th>
+                        <th className="px-4 py-3 font-medium">Regla</th>
+                        <th className="px-4 py-3 font-medium">Activación</th>
+                        <th className="px-4 py-3 font-medium">Conteo</th>
+                        <th className="px-4 py-3 font-medium">Alcance</th>
+                        <th className="px-4 py-3 font-medium">Actualizado</th>
+                        <th className="px-4 py-3 font-medium text-right">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {promotions.map((promotion) => (
+                        <tr key={promotion.id} className="border-b border-border-soft/80 bg-surface-canvas transition-colors hover:bg-surface-subtle/60">
+                          <td className="px-4 py-4 align-top">
+                            <div className="space-y-1">
+                              <Link href={`/admin/catalog/promotions/${promotion.id}`} className="rounded-lg px-1 py-0.5 text-label-md text-text-primary transition-[color,background-color,border-color] duration-[200ms] ease-soft hover:bg-surface-subtle hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-canvas">
+                                {promotion.name}
+                              </Link>
+                              <p className="text-body-sm text-text-secondary">
+                                {promotion.description?.trim().length ? promotion.description : editorDescriptionFallback(promotion.ruleType)}
+                              </p>
+                              <p className="text-caption text-text-muted">P{promotion.priority}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 align-top">
+                            <span className={cx("inline-flex rounded-full px-2.5 py-0.5 text-label-sm", promotion.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700")}>
+                              {promotion.isActive ? "Activa" : "Inactiva"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">{ruleLabels[promotion.ruleType]}</td>
+                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">
+                            <div className="space-y-1">
+                              <p className="font-medium text-text-primary">{triggerLabels[promotion.triggerType]}</p>
+                              <p>{promotion.couponCode ?? "Sin cupón"}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">{resolvePromotionMatchingModeLabel(promotion)}</td>
+                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">{resolvePromotionScopeSummary(promotion)}</td>
+                          <td className="px-4 py-4 align-top text-body-sm text-text-secondary">{formatDate(promotion.updatedAt)}</td>
+                          <td className="px-4 py-4 text-right align-top">
+                            <Link href={`/admin/catalog/promotions/${promotion.id}`} className={ADMIN_BUTTON_SECONDARY_CLASS_NAME}>
+                              Editar
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
-          </section>
-        ) : null}
-
-        {isCreatePage ? null : editingPromotion ? (
-          <aside className={ADMIN_STICKY_PANEL_SURFACE_CLASS_NAME}>
-            {editorPanel}
-          </aside>
-        ) : null}
-      </div>
-
-      {isCreatePage ? <section className={ADMIN_PANEL_SURFACE_CLASS_NAME}>{editorPanel}</section> : null}
+      </section>
     </div>
   );
 }
@@ -1266,6 +1440,7 @@ function serializePromotionConfig(formData: PromotionEditorFormState): AdminProm
         percentOff: parseNumberField(formData.buyXGetYPercentOff, 100),
         repeat: formData.buyXGetYRepeat,
         appliesToCheapest: formData.buyXGetYAppliesToCheapest,
+        matchingMode: formData.itemMatchingMode,
       };
     case "nth_item_percentage":
       return {
@@ -1273,9 +1448,11 @@ function serializePromotionConfig(formData: PromotionEditorFormState): AdminProm
         percentOff: parseNumberField(formData.nthPercentOff, 50),
         repeat: formData.nthRepeat,
         appliesToCheapest: formData.nthAppliesToCheapest,
+        matchingMode: formData.itemMatchingMode,
       };
     case "volume_discount":
       return {
+        matchingMode: formData.itemMatchingMode,
         tiers: formData.volumeTiers.map((tier) => (
           tier.discountType === "percent"
             ? {
@@ -1314,6 +1491,7 @@ function serializePromotionConfig(formData: PromotionEditorFormState): AdminProm
         percentOff: 100,
         repeat: true,
         appliesToCheapest: true,
+        matchingMode: "same_product",
       };
   }
 }
@@ -1321,11 +1499,11 @@ function serializePromotionConfig(formData: PromotionEditorFormState): AdminProm
 function buildEditorSummary(formData: PromotionEditorFormState): string {
   switch (formData.ruleType) {
     case "buy_x_get_y":
-      return `Compra ${formData.buyQuantity || "0"} y recibe ${formData.getQuantity || "0"} con ${formData.buyXGetYPercentOff || "0"}% de descuento.`;
+      return `Compra ${formData.buyQuantity || "0"} y recibe ${formData.getQuantity || "0"} con ${formData.buyXGetYPercentOff || "0"}% de descuento. ${formatMatchingModeSummary(formData.itemMatchingMode)}`;
     case "nth_item_percentage":
-      return `La unidad ${formData.itemPosition || "0"} aplica ${formData.nthPercentOff || "0"}% de descuento.`;
+      return `La unidad ${formData.itemPosition || "0"} aplica ${formData.nthPercentOff || "0"}% de descuento. ${formatMatchingModeSummary(formData.itemMatchingMode)}`;
     case "volume_discount":
-      return `${formData.volumeTiers.length} escala(s) configuradas para descuento por volumen.`;
+      return `${formData.volumeTiers.length} escala(s) configuradas para descuento por volumen. ${formatMatchingModeSummary(formData.itemMatchingMode)}`;
     case "free_shipping":
       return `Envío gratis para ${formatFreeShippingSummary(formData)}.`;
     default:
@@ -1413,6 +1591,23 @@ function filterProductReferences<T extends { name: string; brand: string }>(item
 
 function editorDescriptionFallback(ruleType: PromotionRuleType): string {
   return ruleLabels[ruleType];
+}
+
+function resolvePromotionMatchingModeLabel(promotion: AdminPromotionItem): string {
+  if (promotion.ruleType === "free_shipping") {
+    return "No aplica";
+  }
+
+  const matchingMode = "matchingMode" in promotion.config ? promotion.config.matchingMode : "same_product";
+  return matchingMode === "mixed_scope" ? "Mezcla alcance" : "Por producto";
+}
+
+function resolvePromotionScopeSummary(promotion: AdminPromotionItem): string {
+  return [
+    `Productos: ${promotion.scope.productIds.length || "Todos"}`,
+    `Categorías: ${promotion.scope.categoryIds.length || "Todas"}`,
+    `Marcas: ${promotion.scope.brandIds.length || "Todas"}`,
+  ].join(" · ");
 }
 
 function StatCard(props: { label: string; value: string; helper: string }) {
@@ -1517,9 +1712,16 @@ function SelectionSection(props: {
           </span>
         </div>
       </summary>
+
       <div className="mt-4 space-y-3">
-        <input value={props.searchValue} onChange={(event) => props.onSearchChange(event.target.value)} className={ADMIN_COMPACT_FIELD_CLASS_NAME} placeholder={props.placeholder} />
-        <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+        <input
+          value={props.searchValue}
+          onChange={(event) => props.onSearchChange(event.target.value)}
+          className={ADMIN_COMPACT_FIELD_CLASS_NAME}
+          placeholder={props.placeholder}
+        />
+
+        <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
           {props.children}
         </div>
       </div>
@@ -1527,35 +1729,24 @@ function SelectionSection(props: {
   );
 }
 
-function SelectionCheckbox(props: { checked: boolean; onChange: () => void; label: string; description?: string; thumbnailUrl?: string | null; thumbnailAlt?: string }) {
+function SelectionCheckbox(props: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  thumbnailUrl?: string | null;
+  thumbnailAlt?: string;
+}) {
   return (
-    <label className="flex items-start gap-3 rounded-2xl border border-border-soft bg-surface-subtle px-4 py-3 text-body-sm text-text-secondary">
-      <input type="checkbox" checked={props.checked} onChange={props.onChange} className="mt-0.5 h-4 w-4 rounded border-border-default" />
+    <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border-soft bg-surface-subtle px-3 py-2.5 text-body-sm text-text-secondary transition-colors hover:border-border-default hover:bg-surface-canvas">
+      <input type="checkbox" checked={props.checked} onChange={props.onChange} className="h-4 w-4 rounded border-border-default" />
       {props.thumbnailUrl ? (
-        <div className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-border-soft bg-surface-canvas">
-          <Image
-            src={props.thumbnailUrl}
-            alt={props.thumbnailAlt ?? props.label}
-            fill
-            sizes="40px"
-            className="object-cover"
-          />
+        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-border-soft bg-surface-canvas">
+          <Image src={props.thumbnailUrl} alt={props.thumbnailAlt ?? props.label} fill sizes="40px" className="object-cover" />
         </div>
       ) : null}
-      <span className="min-w-0">
-        <span className="block leading-[1.2] text-text-primary">{props.label}</span>
-        {props.description ? <span className="block text-text-muted">{props.description}</span> : null}
-      </span>
+      <span className="min-w-0 truncate text-text-primary">{props.label}</span>
     </label>
   );
-}
-
-function buildPreviewCartItem(productId: string): PreviewCartItemState {
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    productId,
-    quantity: "1",
-  };
 }
 
 function formatMoney(value: number): string {
@@ -1564,4 +1755,18 @@ function formatMoney(value: number): string {
     currency: "MXN",
     minimumFractionDigits: 2,
   }).format(value);
+}
+
+function formatMatchingModeSummary(mode: PromotionItemMatchingMode): string {
+  return mode === "same_product"
+    ? "Cada producto debe cumplir la cantidad por separado."
+    : "Se pueden mezclar productos distintos dentro del alcance.";
+}
+
+function buildPreviewCartItem(productId: string): PreviewCartItemState {
+  return {
+    id: globalThis.crypto?.randomUUID?.() ?? `preview-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    productId,
+    quantity: "1",
+  };
 }

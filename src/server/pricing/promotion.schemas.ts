@@ -6,6 +6,7 @@ import type {
   AdminPromotionFormData,
   FreeShippingPromotionConfig,
   PromotionConfig,
+  PromotionItemMatchingMode,
   PromotionRuleType,
   PromotionScopeSelection,
 } from "@/types/admin-promotions";
@@ -14,6 +15,7 @@ import type { CheckoutPricingPreviewRequest } from "@/types/checkout-pricing";
 const promotionTriggerTypeSchema = z.enum(["automatic", "coupon"]);
 const promotionRuleTypeSchema = z.enum(["buy_x_get_y", "nth_item_percentage", "volume_discount", "free_shipping"]);
 const promotionStackingModeSchema = z.enum(["exclusive", "stackable"]);
+const promotionItemMatchingModeSchema = z.enum(["same_product", "mixed_scope"]);
 
 const identifierListSchema = z.array(z.string().trim().min(1, "Id is required")).default([]);
 
@@ -64,6 +66,7 @@ const buyXGetYConfigSchema = z.object({
   percentOff: percentOffSchema.default(100),
   repeat: z.boolean().default(true),
   appliesToCheapest: z.boolean().default(true),
+  matchingMode: promotionItemMatchingModeSchema.default("same_product"),
 });
 
 const nthItemPercentageConfigSchema = z.object({
@@ -71,6 +74,7 @@ const nthItemPercentageConfigSchema = z.object({
   percentOff: percentOffSchema.default(50),
   repeat: z.boolean().default(true),
   appliesToCheapest: z.boolean().default(true),
+  matchingMode: promotionItemMatchingModeSchema.default("same_product"),
 });
 
 const volumeDiscountTierSchema = z.object({
@@ -90,6 +94,7 @@ const volumeDiscountTierSchema = z.object({
 
 const volumeDiscountConfigSchema = z.object({
   tiers: z.array(volumeDiscountTierSchema).min(1, "Define at least one bulk tier."),
+  matchingMode: promotionItemMatchingModeSchema.default("same_product"),
 }).superRefine((value, context) => {
   const tierKeys = new Set<number>();
   let previousMinQuantity = 0;
@@ -226,6 +231,11 @@ export interface NormalizedAdminPromotionInput {
   endsAt: Date | null;
   scope: PromotionScopeSelection;
   config: PromotionConfig;
+}
+
+export function resolvePromotionItemMatchingMode(value: unknown): PromotionItemMatchingMode {
+  const result = promotionItemMatchingModeSchema.safeParse(value);
+  return result.success ? result.data : "same_product";
 }
 
 export interface NormalizedAdminPromotionPreviewInput {

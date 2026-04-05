@@ -35,7 +35,7 @@ function CartItemRow({ item, pricingLine, isPricingPending }: {
   return (
     <div className="flex items-start gap-3 py-4">
       {/* Product image */}
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border-soft bg-white">
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border-soft bg-white">
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- R2 assets use native img
           <img
@@ -53,10 +53,10 @@ function CartItemRow({ item, pricingLine, isPricingPending }: {
       </div>
 
       {/* Info + stepper */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 pr-2">
         <Link
           href={item.href}
-          className="block text-body-sm font-medium leading-snug text-text-primary line-clamp-2 hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-1"
+          className="block text-[0.9rem] font-medium leading-snug text-text-primary line-clamp-2 hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-1 sm:text-[0.85rem]"
         >
           {item.name}
         </Link>
@@ -67,13 +67,13 @@ function CartItemRow({ item, pricingLine, isPricingPending }: {
           <button
             type="button"
             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-soft hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-1"
+            className="flex h-[1.6rem] w-[1.6rem] items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-soft hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-1"
             aria-label={`Reducir cantidad de ${item.name}`}
           >
-            <Minus className="h-3 w-3" aria-hidden="true" />
+            <Minus className="h-2.5 w-2.5" aria-hidden="true" />
           </button>
           <span
-            className="w-7 text-center text-label-sm tabular-nums text-text-primary"
+            className="w-6 text-center text-label-sm tabular-nums text-text-primary"
             aria-label={`Cantidad: ${item.quantity}`}
           >
             {item.quantity}
@@ -81,31 +81,52 @@ function CartItemRow({ item, pricingLine, isPricingPending }: {
           <button
             type="button"
             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-soft hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-1"
+            className="flex h-[1.6rem] w-[1.6rem] items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface-soft hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-1"
             aria-label={`Aumentar cantidad de ${item.name}`}
           >
-            <Plus className="h-3 w-3" aria-hidden="true" />
+            <Plus className="h-2.5 w-2.5" aria-hidden="true" />
           </button>
         </div>
       </div>
 
       {/* Price + delete */}
-      <div className="flex shrink-0 flex-col items-end gap-3">
-        <div className="text-right">
-          {isPricingPending && pricingLine === null ? (
-            <span className="block text-[0.72rem] text-text-muted">Calculando...</span>
-          ) : (
-            <>
-              {hasPromotionDiscount ? (
-                <span className="block text-[0.72rem] tabular-nums text-text-muted line-through">
-                  {priceFormatter.format(baseSubtotal)}
+      <div className="flex w-[86px] shrink-0 flex-col items-end gap-3">
+        <div className="min-h-[2.5rem] w-full text-right">
+          <AnimatePresence mode="wait" initial={false}>
+            {isPricingPending && pricingLine === null ? (
+              <motion.span
+                key="price-loading"
+                className="block text-[0.72rem] text-text-muted"
+                variants={contentFadeVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                Calculando...
+              </motion.span>
+            ) : (
+              <motion.div
+                key="price-final"
+                variants={contentFadeVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                {hasPromotionDiscount ? (
+                  <span className="block text-[0.72rem] tabular-nums text-text-muted line-through">
+                    {priceFormatter.format(baseSubtotal)}
+                  </span>
+                ) : (
+                  <span className="block text-[0.72rem] opacity-0" aria-hidden="true">
+                    {priceFormatter.format(baseSubtotal)}
+                  </span>
+                )}
+                <span className="text-label-md font-semibold tabular-nums text-text-primary">
+                  {priceFormatter.format(finalSubtotal)}
                 </span>
-              ) : null}
-              <span className="text-label-md font-semibold tabular-nums text-text-primary">
-                {priceFormatter.format(finalSubtotal)}
-              </span>
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         <button
           type="button"
@@ -150,20 +171,20 @@ const backdropTransition = {
   ease: motionTokens.ease.standard,
 } as const;
 
-const itemVariants = {
-  hidden: { opacity: 0, x: motionTokens.distance.sm },
-  visible: (i: number) => ({
+const ITEM_EXIT_DURATION = motionTokens.duration.slow;
+const ITEM_COLLAPSE_EASE = [0.25, 0.8, 0.25, 1] as const;
+
+const contentFadeVariants = {
+  hidden: { opacity: 0 },
+  visible: {
     opacity: 1,
-    x: 0,
     transition: {
       duration: motionTokens.duration.base,
       ease: motionTokens.ease.soft,
-      delay: i * 0.04,
     },
-  }),
+  },
   exit: {
     opacity: 0,
-    x: motionTokens.distance.md,
     transition: {
       duration: motionTokens.duration.fast,
       ease: motionTokens.ease.exit,
@@ -176,6 +197,7 @@ export function CartSidebar() {
   const reduceMotion = useReducedMotion() ?? false;
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
   const { preview: pricingPreview, isLoading: isPricingPreviewLoading } = useCheckoutPricingPreview({
     items,
     shippingMethod: "standard",
@@ -248,7 +270,7 @@ export function CartSidebar() {
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border-soft px-5 py-4">
               <div className="flex items-center gap-2">
-                <h2 className="text-headline-sm font-semibold text-text-primary">
+                <h2 className="text-body-md font-semibold text-text-primary">
                   Carrito
                 </h2>
                 {itemCount > 0 && (
@@ -275,38 +297,36 @@ export function CartSidebar() {
               ) : (
                 <ul aria-label="Productos en el carrito" className="divide-y divide-border-soft">
                   <AnimatePresence>
-                    {items.map((item, i) => {
+                    {items.map((item) => {
                       const isNewItem = item.id === lastAddedId;
                       return (
                         <motion.li
                           key={item.id}
-                          layout
-                          className="min-w-0"
-                          {...(isNewItem
-                            ? {
-                                initial: { opacity: 0 },
-                                animate: { opacity: 1 },
-                                exit: {
-                                  opacity: 0,
-                                  x: motionTokens.distance.md,
-                                  transition: {
-                                    duration: motionTokens.duration.fast,
-                                    ease: motionTokens.ease.exit,
-                                  },
-                                },
-                                transition: {
-                                  duration: motionTokens.duration.moderate,
-                                  delay: motionTokens.duration.moderate + 0.1,
-                                  ease: motionTokens.ease.soft,
-                                },
-                              }
-                            : {
-                                custom: reduceMotion ? 0 : i,
-                                variants: itemVariants,
-                                initial: "hidden",
-                                animate: "visible",
-                                exit: "exit",
-                              })}
+                          className="min-w-0 overflow-hidden"
+                          initial={isNewItem ? { opacity: 0, height: 0 } : false}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{
+                            opacity: 0,
+                            height: 0,
+                            transition: {
+                              opacity: { duration: motionTokens.duration.fast, ease: motionTokens.ease.exit },
+                              height: { duration: ITEM_EXIT_DURATION, ease: ITEM_COLLAPSE_EASE },
+                            },
+                          }}
+                          {...(isNewItem && {
+                            transition: {
+                              opacity: {
+                                duration: motionTokens.duration.moderate,
+                                delay: motionTokens.duration.moderate + 0.25,
+                                ease: motionTokens.ease.soft,
+                              },
+                              height: {
+                                duration: motionTokens.duration.fast,
+                                delay: motionTokens.duration.moderate + 0.15,
+                                ease: motionTokens.ease.soft,
+                              },
+                            },
+                          })}
                         >
                           <CartItemRow
                             item={item}
@@ -324,37 +344,76 @@ export function CartSidebar() {
             {/* Footer */}
             {items.length > 0 && (
               <div className="shrink-0 border-t border-border-soft bg-surface-canvas p-5 pb-safe-bottom">
-                {isPricingPreviewLoading ? (
-                  <div className="mb-3 flex items-center gap-2 text-[0.72rem] text-text-muted">
-                    <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    <span>Validando promociones activas...</span>
-                  </div>
-                ) : activePromotionLabels.length > 0 ? (
-                  <div className="mb-3 flex items-start gap-2 text-[0.72rem] leading-relaxed text-text-secondary">
-                    <Tag className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden="true" />
-                    <p>
-                      Promociones activas: <span className="font-medium text-text-primary">{activePromotionLabels.join(" · ")}</span>
-                    </p>
-                  </div>
-                ) : null}
+                <AnimatePresence mode="wait" initial={false}>
+                  {isPricingPreviewLoading ? (
+                    <motion.div
+                      key="promo-loading"
+                      className="mb-3 flex items-center gap-2 text-[0.72rem] text-text-muted"
+                      variants={contentFadeVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                    >
+                      <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <span>Validando promociones activas...</span>
+                    </motion.div>
+                  ) : activePromotionLabels.length > 0 ? (
+                    <motion.div
+                      key="promo-final"
+                      className="mb-3 flex items-start gap-2 text-[0.72rem] leading-relaxed text-text-secondary"
+                      variants={contentFadeVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                    >
+                      <Tag className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden="true" />
+                      <p>
+                        Promociones activas: <span className="font-medium text-text-primary">{activePromotionLabels.join(" · ")}</span>
+                      </p>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
 
                 {/* Subtotal row */}
                 <div className="mb-4 flex items-baseline justify-between">
                   <span className="text-body-sm text-text-secondary">Subtotal</span>
-                  {showSubtotalPending ? (
-                    <span className="text-body-sm text-text-muted">Calculando...</span>
-                  ) : (
-                    <div className="text-right">
-                      {discountedSubtotal < subtotal ? (
-                        <span className="block text-[0.72rem] tabular-nums text-text-muted line-through">
-                          {priceFormatter.format(subtotal)}
-                        </span>
-                      ) : null}
-                      <span className="text-headline-sm font-semibold tabular-nums text-text-primary">
-                        {priceFormatter.format(discountedSubtotal)}
-                      </span>
-                    </div>
-                  )}
+                  <div className="min-h-[2.5rem] min-w-[96px] text-right">
+                    <AnimatePresence mode="wait" initial={false}>
+                      {showSubtotalPending ? (
+                        <motion.span
+                          key="subtotal-loading"
+                          className="text-body-sm text-text-muted"
+                          variants={contentFadeVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                        >
+                          Calculando...
+                        </motion.span>
+                      ) : (
+                        <motion.div
+                          key="subtotal-final"
+                          variants={contentFadeVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                        >
+                          {discountedSubtotal < subtotal ? (
+                            <span className="block text-[0.72rem] tabular-nums text-text-muted line-through">
+                              {priceFormatter.format(subtotal)}
+                            </span>
+                          ) : (
+                            <span className="block text-[0.72rem] opacity-0" aria-hidden="true">
+                              {priceFormatter.format(subtotal)}
+                            </span>
+                          )}
+                          <span className="text-[1.1rem] font-semibold tabular-nums text-text-primary">
+                            {priceFormatter.format(discountedSubtotal)}
+                          </span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 {/* Checkout CTA */}

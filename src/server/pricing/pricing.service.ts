@@ -18,6 +18,7 @@ import type {
   BuyXGetYPromotionConfig,
   NthItemPercentagePromotionConfig,
   PromotionConfig,
+  PromotionItemMatchingMode,
   VolumeDiscountPromotionConfig,
   VolumeDiscountTier,
 } from "@/types/admin-promotions";
@@ -338,47 +339,54 @@ function applyItemPromotion(input: {
   appliedPromotionMap: Map<string, CheckoutPricingAdjustment>;
 }): void {
   const config = parsePromotionConfig(input.promotion.ruleType, input.promotion.config);
-  const eligibleLineIndices = resolveEligibleLineIndices(input.promotion, input.lines);
-  if (eligibleLineIndices.length === 0) {
+  const eligibleLineGroups = resolveEligibleLineGroups(input.promotion, input.lines, config);
+  if (eligibleLineGroups.length === 0) {
     return;
   }
 
-  if (input.promotion.stackingMode === "exclusive" && eligibleLineIndices.some((index) => input.lines[index]?.hasExclusivePromotion)) {
-    return;
-  }
-
-  let discountByLine = new Map<number, number>();
   let description = input.promotion.name;
   const displayContent = resolvePromotionDisplayContent(input.promotion.ruleType, config);
 
-  switch (input.promotion.ruleType) {
-    case "buy_x_get_y":
-      discountByLine = buildBuyXGetYDiscountMap(input.lines, eligibleLineIndices, config as BuyXGetYPromotionConfig);
-      description = describeBuyXGetYPromotion(config as BuyXGetYPromotionConfig);
-      break;
-    case "nth_item_percentage":
-      discountByLine = buildNthItemDiscountMap(input.lines, eligibleLineIndices, config as NthItemPercentagePromotionConfig);
-      description = describeNthItemPromotion(config as NthItemPercentagePromotionConfig);
-      break;
-    case "volume_discount":
-      discountByLine = buildVolumeDiscountMap(input.lines, eligibleLineIndices, config as VolumeDiscountPromotionConfig);
-      description = describeVolumePromotion(config as VolumeDiscountPromotionConfig);
-      break;
-    case "free_shipping":
-      return;
-    default:
-      return;
-  }
+  for (const eligibleLineIndices of eligibleLineGroups) {
+    if (eligibleLineIndices.length === 0) {
+      continue;
+    }
 
-  applyLineDiscounts({
-    promotion: input.promotion,
-    description,
-    shortLabel: displayContent.shortLabel,
-    badgeParts: displayContent.badgeParts,
-    discountByLine,
-    lines: input.lines,
-    appliedPromotionMap: input.appliedPromotionMap,
-  });
+    if (input.promotion.stackingMode === "exclusive" && eligibleLineIndices.some((index) => input.lines[index]?.hasExclusivePromotion)) {
+      continue;
+    }
+
+    let discountByLine = new Map<number, number>();
+
+    switch (input.promotion.ruleType) {
+      case "buy_x_get_y":
+        discountByLine = buildBuyXGetYDiscountMap(input.lines, eligibleLineIndices, config as BuyXGetYPromotionConfig);
+        description = describeBuyXGetYPromotion(config as BuyXGetYPromotionConfig);
+        break;
+      case "nth_item_percentage":
+        discountByLine = buildNthItemDiscountMap(input.lines, eligibleLineIndices, config as NthItemPercentagePromotionConfig);
+        description = describeNthItemPromotion(config as NthItemPercentagePromotionConfig);
+        break;
+      case "volume_discount":
+        discountByLine = buildVolumeDiscountMap(input.lines, eligibleLineIndices, config as VolumeDiscountPromotionConfig);
+        description = describeVolumePromotion(config as VolumeDiscountPromotionConfig);
+        break;
+      case "free_shipping":
+        return;
+      default:
+        return;
+    }
+
+    applyLineDiscounts({
+      promotion: input.promotion,
+      description,
+      shortLabel: displayContent.shortLabel,
+      badgeParts: displayContent.badgeParts,
+      discountByLine,
+      lines: input.lines,
+      appliedPromotionMap: input.appliedPromotionMap,
+    });
+  }
 }
 
 function applyShippingPromotion(input: {
@@ -630,6 +638,48 @@ function resolveEligibleLineIndices(promotion: CalculablePromotion, lines: Prici
 
     return matchesProductScope || matchesBrandScope || matchesCategoryScope ? [index] : [];
   });
+}
+
+function resolveEligibleLineGroups(
+  promotion: CalculablePromotion,
+  lines: PricingLineState[],
+  config: PromotionConfig,
+): number[][] {
+  const eligibleLineIndices = resolveEligibleLineIndices(promotion, lines);
+  if (eligibleLineIndices.length === 0) {
+    return [];
+  }
+
+  if (promotion.ruleType === "free_shipping") {
+    return [eligibleLineIndices];
+  }
+
+  const matchingMode = resolveItemMatchingMode(config);
+  if (matchingMode === "mixed_scope") {
+    return [eligibleLineIndices];
+  }
+
+  const groupsByProductId = new Map<string, number[]>();
+  for (const lineIndex of eligibleLineIndices) {
+    const line = lines[lineIndex];
+    if (!line) {
+      continue;
+    }
+
+    const existingGroup = groupsByProductId.get(line.productId) ?? [];
+    existingGroup.push(lineIndex);
+    groupsByProductId.set(line.productId, existingGroup);
+  }
+
+  return [...groupsByProductId.values()];
+}
+
+function resolveItemMatchingMode(config: PromotionConfig): PromotionItemMatchingMode {
+  if (typeof config !== "object" || config === null || !("matchingMode" in config)) {
+    return "same_product";
+  }
+
+  return config.matchingMode === "mixed_scope" ? "mixed_scope" : "same_product";
 }
 
 function buildEligibleUnits(

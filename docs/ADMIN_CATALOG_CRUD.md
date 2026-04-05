@@ -49,8 +49,16 @@ Admin CRUD for the normalized local catalog used by the public storefront and Ho
   - Requires admin session.
 
 - `GET /admin/catalog/badges`
-  - Protected admin page for managing reusable global product badge presets.
-  - Supports create, edit, activate/deactivate, ordering, color preview, and delete.
+  - Protected admin page for listing reusable global product badge presets.
+  - Each record opens in its own dedicated editor page.
+  - Requires admin session.
+
+- `GET /admin/catalog/badges/new`
+  - Protected admin page for creating a reusable global product badge preset.
+  - Requires admin session.
+
+- `GET /admin/catalog/badges/:id`
+  - Protected admin page for editing an existing reusable global product badge preset.
   - Requires admin session.
 
 ## API Routes

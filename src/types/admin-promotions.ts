@@ -7,6 +7,7 @@ import type {
 export type PromotionTriggerType = "automatic" | "coupon";
 export type PromotionRuleType = "buy_x_get_y" | "nth_item_percentage" | "volume_discount" | "free_shipping";
 export type PromotionStackingMode = "exclusive" | "stackable";
+export type PromotionItemMatchingMode = "same_product" | "mixed_scope";
 
 export interface PromotionScopeSelection {
   productIds: string[];
@@ -20,6 +21,7 @@ export interface BuyXGetYPromotionConfig {
   percentOff: number;
   repeat: boolean;
   appliesToCheapest: boolean;
+  matchingMode: PromotionItemMatchingMode;
 }
 
 export interface NthItemPercentagePromotionConfig {
@@ -27,6 +29,7 @@ export interface NthItemPercentagePromotionConfig {
   percentOff: number;
   repeat: boolean;
   appliesToCheapest: boolean;
+  matchingMode: PromotionItemMatchingMode;
 }
 
 export interface VolumeDiscountTier {
@@ -37,6 +40,7 @@ export interface VolumeDiscountTier {
 
 export interface VolumeDiscountPromotionConfig {
   tiers: VolumeDiscountTier[];
+  matchingMode: PromotionItemMatchingMode;
 }
 
 export interface FreeShippingPromotionConfig {

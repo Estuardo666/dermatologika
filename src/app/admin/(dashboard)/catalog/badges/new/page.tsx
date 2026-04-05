@@ -2,12 +2,12 @@ import { BadgePresetAdminPanel } from "@/features/admin-catalog/components/badge
 import { getProductBadgePresetAdminData } from "@/services/admin-catalog/get-catalog-admin-data";
 
 export const metadata = {
-  title: "Admin Badges — Dermatologika",
-  description: "Gestionar presets globales de badge para productos.",
+  title: "Admin New Badge Preset — Dermatologika",
+  description: "Crear preset global de badge para productos.",
 };
 
-export default async function AdminCatalogBadgesPage() {
+export default async function AdminCatalogBadgeNewPage() {
   const presets = await getProductBadgePresetAdminData();
 
-  return <BadgePresetAdminPanel initialPresets={presets} pageMode="index" />;
+  return <BadgePresetAdminPanel initialPresets={presets} pageMode="create" />;
 }

@@ -32,16 +32,31 @@ Key promotion fields:
 * `endsAt`
 * `config` as validated JSON
 
+For quantity-based rules, `config` also defines how eligible units are grouped:
+
+* `matchingMode: "same_product"`: quantities are counted per product id
+* `matchingMode: "mixed_scope"`: quantities can be combined across different products inside the selected scope
+
+Current default for quantity-based promotions is `same_product`.
+
 Scope rules:
 
 * empty scope means the promotion applies to the full cart
 * populated scope works as a union across products, categories, and brands
+
+Matching rules:
+
+* a brand or category scope does not automatically mean units are mixed together
+* with `same_product`, a 3x2 on a brand only activates when one product from that brand reaches 3 units by itself
+* with `mixed_scope`, different products inside the same scope can combine to reach the threshold
 
 ## Admin API
 
 Dashboard route:
 
 * `/admin/catalog/promotions`
+* `/admin/catalog/promotions/new`
+* `/admin/catalog/promotions/:id`
 
 Authenticated endpoints:
 
@@ -90,7 +105,8 @@ Example 3x2:
     "getQuantity": 1,
     "percentOff": 100,
     "repeat": true,
-    "appliesToCheapest": true
+    "appliesToCheapest": true,
+    "matchingMode": "same_product"
   }
 }
 ```
@@ -128,7 +144,8 @@ Segundo al 50%:
     "itemPosition": 2,
     "percentOff": 50,
     "repeat": true,
-    "appliesToCheapest": true
+    "appliesToCheapest": true,
+    "matchingMode": "same_product"
   }
 }
 ```
@@ -160,6 +177,7 @@ Use `ruleType: "volume_discount"`.
     "brandIds": []
   },
   "config": {
+    "matchingMode": "same_product",
     "tiers": [
       { "minQuantity": 3, "percentOff": 10 },
       { "minQuantity": 6, "percentOff": 15 }
@@ -169,6 +187,8 @@ Use `ruleType: "volume_discount"`.
 ```
 
 The highest matching tier is applied to all eligible lines.
+
+If operation wants a brand/category promo to count mixed products together, switch the admin selector to `mixed_scope`.
 
 ### D. Envío gratis por cantidad o monto
 
